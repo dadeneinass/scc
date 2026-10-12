@@ -38,28 +38,34 @@
     .timeline-head { height: 32px; display: flex; margin-left: 290px; border-bottom: 1px solid var(--border); position: relative; background: #080d1a; }
     .tick-label { position: absolute; transform: translateX(-50%); font-size: 0.7rem; color: var(--muted); font-weight: 600; top: 8px; }
 
-    /* GRUPPEN-HEADER */
+    /* GRUPPEN-HEADER (Dynamische Höhe gegen Text-Clipping) */
     .group-header-row {
-      display: flex; height: 32px; background: #18243c; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border);
-      align-items: center; position: relative;
+      display: flex; min-height: 44px; height: auto; background: #18243c; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border);
+      align-items: stretch; position: relative;
     }
     .group-header-meta {
-      width: 290px; min-width: 290px; padding: 0 10px; font-size: 0.82rem; font-weight: 800; color: #fff;
-      display: flex; align-items: center; justify-content: space-between; border-right: 1px solid var(--border);
+      width: 290px; min-width: 290px; padding: 6px 10px; font-size: 0.8rem; font-weight: 800; color: #fff;
+      display: flex; flex-direction: column; justify-content: center; gap: 3px; border-right: 1px solid var(--border);
+      line-height: 1.3;
     }
-    .group-header-track { flex: 1; height: 100%; position: relative; background: #131d33; }
+    .group-header-track { flex: 1; height: 100%; min-height: 44px; position: relative; background: #131d33; }
 
-    .badge-stage { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 900; font-size: 0.75rem; }
+    .badge-stage { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 900; font-size: 0.75rem; width: fit-content; }
     .badge-red { background: #dc2626; color: #fff; }
     .badge-green { background: #16a34a; color: #fff; }
     .badge-yellow { background: #ca8a04; color: #000; }
     .badge-purple { background: #9333ea; color: #fff; }
     .badge-plaza { background: #0284c7; color: #fff; }
 
-    /* SCHLANKE PROGRAMM-STATUSLINIE IM HEADER */
-    .stage-status-line {
-      position: absolute; top: 10px; height: 11px; border-radius: 6px;
-      opacity: 0.95; box-shadow: 0 0 6px rgba(0,0,0,0.6); pointer-events: none;
+    /* BÜHNENPROGRAMM-BALKEN IM HEADER (Chronologisch & synchron) */
+    .stage-session-pill {
+      position: absolute; top: 11px; height: 22px; border-radius: 3px;
+      font-size: 0.62rem; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.25);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      cursor: help;
     }
 
     .gantt-row { display: flex; height: 38px; border-bottom: 1px solid #1a2744; position: relative; align-items: center; }
@@ -155,7 +161,7 @@
   <div class="top-bar">
     <div>
       <h1>Smart Country Convention 2026 – Pausen-Planer</h1>
-      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Priorisierte Gruppen • Sonja Kern ab 17:30 an C36 • Bühnen-Statuslinien • Tourensperren</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Dienstag, 13. Oktober • Alle Bühnenslots im Zeitstrahl • Mehrzeilige Header • Tourensperren</div>
     </div>
     <div class="btn-group">
       <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
@@ -279,45 +285,119 @@
   </div>
 
 <script>
+// DETAILGETREUES PROGRAMM FÜR DIENSTAG, 13. OKTOBER (EXAKT NACH DEINER LISTE)
+var STAGE_SCHEDULES = {
+  "Plaza Stage": [
+    { start: "11:45", end: "12:00", title: "Sovereign Cloud als Fundament" },
+    { start: "12:00", end: "12:15", title: "Keynote des Bundesministers für Landwirtschaft, Ernährung und Heimat" },
+    { start: "12:15", end: "12:30", title: "Souveräne Entscheidungen brauchen mehr als eine Perspektive" },
+    { start: "12:30", end: "12:45", title: "Digitale Handlungsfähigkeit & Souveränität" },
+    { start: "13:00", end: "14:15", title: "Awards zum Smart City Index" },
+    { start: "14:15", end: "14:30", title: "Staat. Sicher. Souverän. Vernetzt." },
+    { start: "14:30", end: "14:45", title: "UnternehmerTUM für den Staat der Zukunft" },
+    { start: "14:45", end: "15:00", title: "Souveränität operativ machen – Vier Prüfsteine" },
+    { start: "15:00", end: "15:15", title: "Resiliente Verwaltung im Zeitalter der KI" },
+    { start: "15:15", end: "15:30", title: "Souveräne Cloud der nächsten Generation" },
+    { start: "15:30", end: "15:45", title: "Agentische KI in souveränen Dateninfrastrukturen" },
+    { start: "15:45", end: "16:00", title: "Staatsmodernisierung – Bürger, Unternehmen, Verwaltung" },
+    { start: "16:00", end: "16:15", title: "Human in the Loop ist wichtig" },
+    { start: "16:15", end: "17:00", title: "Die große Illusion: Warum uns KI das Denken nicht abnimmt" },
+    { start: "18:00", end: "20:00", title: "SCCON Networking Night (bis 22:00)" }
+  ],
+  "Red Stage": [
+    { start: "11:00", end: "11:10", title: "Die Smart City von morgen" },
+    { start: "11:45", end: "12:00", title: "Cloud-Souveränität in der Praxis" },
+    { start: "12:00", end: "12:15", title: "Digitale Souveränität öffentlicher Sektor" },
+    { start: "12:15", end: "12:30", title: "Schneller gründen: d-you Verwaltung & Wirtschaft" },
+    { start: "12:30", end: "13:15", title: "Bürokratieentlastung: Schlankes Verwaltungshandeln" },
+    { start: "13:15", end: "13:30", title: "Nachnutzung bundesweiter KI-Services" },
+    { start: "13:30", end: "13:45", title: "Resiliente Infrastruktur durch Digitale Zwillinge" },
+    { start: "13:45", end: "14:00", title: "Agentische KI – Erfolge in die Breite bringen" },
+    { start: "14:00", end: "14:45", title: "Zukunft der Sozialversicherung" },
+    { start: "14:45", end: "15:00", title: "Europas digitale Souveränität" },
+    { start: "15:00", end: "15:15", title: "Real Talk: Wer betreibt Deutschland morgen?" },
+    { start: "15:15", end: "15:30", title: "Die Datenfabrik in der Verwaltung" },
+    { start: "15:30", end: "16:00", title: "Register-as-a-Service in der Umsetzung" },
+    { start: "16:00", end: "16:15", title: "Cloud made for Europe" },
+    { start: "16:15", end: "16:30", title: "Unit GovTech Berlin" },
+    { start: "16:30", end: "16:45", title: "Beyond Digital: Souveräne Verwaltung" },
+    { start: "16:45", end: "17:00", title: "Software-Defined Defence: Edge-Cloud" },
+    { start: "17:00", end: "17:15", title: "SPARK in a Nutshell" },
+    { start: "17:15", end: "18:00", title: "Stack, Modelle, Souveränität – Basis Verwaltungs-KI" }
+  ],
+  "Green Stage": [
+    { start: "11:00", end: "11:45", title: "Digitale Souveränität: Resilienz und Sicherheit" },
+    { start: "11:45", end: "12:00", title: "Digitale Souveränität konkret – Berlin handelt" },
+    { start: "12:00", end: "12:15", title: "E-Payment in Kommunen" },
+    { start: "12:15", end: "12:45", title: "Sicher-resilient-digital: NRW Kommunen" },
+    { start: "12:45", end: "13:00", title: "Verwaltungsmodernisierung praktisch denken" },
+    { start: "13:00", end: "13:15", title: "Von Kommunen für Kommunen: KI & Cloud" },
+    { start: "13:15", end: "14:00", title: "Netze für morgen: Glasfaser & Mobilfunk" },
+    { start: "14:00", end: "14:15", title: "Die verlorenen Milliarden zurückbringen" },
+    { start: "14:15", end: "14:30", title: "Lisbon: A Smart City" },
+    { start: "14:30", end: "14:45", title: "Interkommunale Zusammenarbeit Software/Hardware" },
+    { start: "14:45", end: "15:00", title: "Smarter Winterdienst Rhön-Grabfeld" },
+    { start: "15:00", end: "15:15", title: "Kommunale Digitalisierung neu denken" },
+    { start: "15:15", end: "15:30", title: "KI-Erfassung Straßenschäden" },
+    { start: "15:30", end: "16:00", title: "Planen, Laden, Parken – Verkehrsdaten" },
+    { start: "16:00", end: "16:45", title: "Open Data und Datennutzung in der Praxis" },
+    { start: "16:45", end: "17:00", title: "GovTeuken: KI-Sprachmodell für Verwaltung" },
+    { start: "17:00", end: "17:15", title: "Data Driven Governance in die Fläche" },
+    { start: "17:15", end: "18:00", title: "Rechenzentren als gute Nachbarn" }
+  ],
+  "Yellow Stage": [
+    { start: "11:10", end: "11:25", title: "Cyberresilienz durch Kohorten" },
+    { start: "11:25", end: "11:40", title: "IT-Angriff: Ein Jahr vom Netz" },
+    { start: "11:40", end: "11:55", title: "Open Source und Sicherheit" },
+    { start: "11:55", end: "12:00", title: "Innovation: Kick-Off Hackathon" },
+    { start: "12:00", end: "12:30", title: "Digital souveräne Städte und Gemeinden" },
+    { start: "12:30", end: "12:45", title: "Finanzsteuerung im Sport" },
+    { start: "12:45", end: "13:00", title: "Smart Standards für Verwaltungsprozesse" },
+    { start: "13:00", end: "13:15", title: "Von der Höhlenwand zur Multicloud" },
+    { start: "13:45", end: "14:00", title: "IT-Planungsprozess Köln" },
+    { start: "14:00", end: "14:15", title: "Vertrauen als Infrastruktur: EUDI Wallet" },
+    { start: "14:15", end: "14:30", title: "Rechtssichere E-Zustellung Wallet" },
+    { start: "14:30", end: "14:45", title: "Souveränität im Praxistest: IONOS Cloud" },
+    { start: "14:45", end: "15:00", title: "openCode: Softwarelieferkette des Staates" },
+    { start: "15:00", end: "15:15", title: "Resiliente Kommunen brauchen mehr als IT" },
+    { start: "15:15", end: "15:30", title: "Cyberangriffe auf den Public Sector" },
+    { start: "15:30", end: "16:00", title: "Digitale Identitäten im Alltag" },
+    { start: "16:00", end: "16:15", title: "Energie zum kommunalen Mehrwert" },
+    { start: "16:15", end: "16:45", title: "Wirkmessung Verwaltungsdigitalisierung" },
+    { start: "16:45", end: "17:00", title: "E-Partizipation Beteiligungsportal" },
+    { start: "17:00", end: "17:15", title: "Sachsen-Anhalt vernetzt digitale Expertise" },
+    { start: "17:15", end: "17:30", title: "International Keynote" },
+    { start: "17:30", end: "17:45", title: "BRISE Digitale Bauverfahren" },
+    { start: "17:45", end: "18:00", title: "ADUCAT Wien" }
+  ],
+  "Purple Stage": [
+    { start: "11:15", end: "11:20", title: "Opening Learning State" },
+    { start: "11:20", end: "12:00", title: "Digitales für alle? Moderne Verwaltung" },
+    { start: "12:00", end: "12:20", title: "Kompetenzen für den KI-Staat" },
+    { start: "12:20", end: "13:00", title: "Von Algorithmus bis Zentralregister" },
+    { start: "13:00", end: "13:15", title: "Digitale Bildungsplattform SCHULE@BW" },
+    { start: "13:15", end: "14:00", title: "Digitalpakt 2.0 in der Praxis" },
+    { start: "14:00", end: "14:15", title: "Digitale Prüfungen Schulen NRW" },
+    { start: "14:15", end: "14:45", title: "Effiziente Beschaffung im Public Sector" },
+    { start: "14:45", end: "15:15", title: "Deutschland Stack zukunftsfähig" },
+    { start: "15:15", end: "16:00", title: "Zwischen KI und Energiewende" },
+    { start: "16:00", end: "16:15", title: "Krisenfeste Kommunen nach Stromausfall" },
+    { start: "16:15", end: "16:45", title: "Bauen ohne Medienbruch" },
+    { start: "16:45", end: "17:00", title: "Souveräne Daten statt Silos" },
+    { start: "17:00", end: "17:15", title: "AI in der Bau- und Immobilienwirtschaft" },
+    { start: "17:15", end: "17:30", title: "Open Source als Grundlage für KI-HW" }
+  ]
+};
+
 var GROUPS = [
   { name: "Extras & Wegeleitung", type: "extras" },
   { name: "Infocounter (Pausenspringer-Bedarf)", type: "springer" },
   { name: "Infocounter (Selbstablösung / Doppelbesetzung)", type: "partner" },
-  { 
-    name: "Plaza Stage (hub27)", 
-    type: "stage", 
-    badgeClass: "badge-plaza",
-    stageKey: "Plaza Stage",
-    programSlot: { start: "10:00", end: "16:00", color: "#0284c7" }
-  },
-  { 
-    name: "Red Stage (hub27)", 
-    type: "stage", 
-    badgeClass: "badge-red",
-    stageKey: "Red Stage",
-    programSlot: { start: "11:00", end: "17:15", color: "#dc2626" }
-  },
-  { 
-    name: "Green Stage (Halle 25)", 
-    type: "stage", 
-    badgeClass: "badge-green",
-    stageKey: "Green Stage",
-    programSlot: { start: "11:00", end: "17:15", color: "#16a34a" }
-  },
-  { 
-    name: "Yellow Stage (Halle 26)", 
-    type: "stage", 
-    badgeClass: "badge-yellow",
-    stageKey: "Yellow Stage",
-    programSlot: { start: "11:25", end: "17:30", color: "#ca8a04" }
-  },
-  { 
-    name: "Purple Stage (Halle 26)", 
-    type: "stage", 
-    badgeClass: "badge-purple",
-    stageKey: "Purple Stage",
-    programSlot: { start: "11:30", end: "17:15", color: "#9333ea" }
-  }
+  { name: "Plaza Stage (hub27)", type: "stage", badgeClass: "badge-plaza", stageKey: "Plaza Stage", color: "#0284c7" },
+  { name: "Red Stage (hub27)", type: "stage", badgeClass: "badge-red", stageKey: "Red Stage", color: "#dc2626" },
+  { name: "Green Stage (Halle 25)", type: "stage", badgeClass: "badge-green", stageKey: "Green Stage", color: "#16a34a" },
+  { name: "Yellow Stage (Halle 26)", type: "stage", badgeClass: "badge-yellow", stageKey: "Yellow Stage", color: "#ca8a04" },
+  { name: "Purple Stage (Halle 26)", type: "stage", badgeClass: "badge-purple", stageKey: "Purple Stage", color: "#9333ea" }
 ];
 
 // TOUREN-SPERRZEITEN FÜR DARIUS & ELENA AN C35
@@ -343,7 +423,7 @@ var appData = {
     { id: 6, name: "Vivek Majithia", desc: "C33 Halle 26b/620", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
     { id: 7, name: "Mariia Romaniuk", desc: "C34 Halle 26a/315", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
     { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24 (bis 17:30)", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "17:30", p: null, p2: null },
-    // SONJA KERN DIREKT UNTER ANNA RIBBECK (aktiv erst ab 17:30 Uhr bis 20:00 Uhr)
+    // SONJA KERN DIREKT UNTER ANNA RIBBECK (Ablösung ab 17:30 bis 20:00 Uhr)
     { id: 32, name: "Sonja Kern", desc: "C36 Halle 24 / Spätschicht (ab 17:30)", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "17:30", sEnd: "20:00", p: null, p2: null },
 
     // 3. INFOCOUNTER SELBSTABLÖSUNG / DOPPELBESETZUNG
@@ -379,11 +459,11 @@ var appData = {
 };
 
 function persist() {
-  try { localStorage.setItem("sccon26_clean_v8_sonja", JSON.stringify(appData)); } catch(e){}
+  try { localStorage.setItem("sccon26_clean_v9_perfect", JSON.stringify(appData)); } catch(e){}
 }
 
 var loaded = null;
-try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v8_sonja")); } catch(e){}
+try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v9_perfect")); } catch(e){}
 if (loaded && loaded.covers && loaded.covers.length > 0) appData = loaded;
 
 function toM(str) {
@@ -405,7 +485,7 @@ function getCurrentMinutes() {
 
 function getDynamicRange() {
   var starts = [420]; // 07:00
-  var ends = [1200];  // 20:00 (Wegen Sonja Kern bis 20:00)
+  var ends = [1200];  // 20:00 (bis Feierabend Sonja Kern)
 
   var nowM = getCurrentMinutes();
   if (nowM >= 420 && nowM <= 1260) {
@@ -436,7 +516,8 @@ function renderTicks(range) {
 }
 
 // LOGISCHE AUTO-VERTEILUNG:
-// Teilt ausschließlich die 7 Vollzeit-Posten mit Springerbedarf ein!
+// 1. Teilt NUR die 7 externen Posten ein!
+// 2. Taktet VON HINTEN (späteste Pausen zuerst), sauber mit 15m Wegzeit-Puffer.
 function autoDistribute() {
   appData.people.forEach(function(p){ p.p = null; p.p2 = null; });
 
@@ -463,7 +544,7 @@ function autoDistribute() {
   assign(6, cAurelia.name, toM("12:00"), 60); // Vivek Majithia
   assign(7, cAurelia.name, toM("13:15"), 60); // Mariia Romaniuk
 
-  // Lukas: C36 (Anna Ribbeck), Anouk Eckart, Alina Batalov (3x 60m mit 15m Wegzeit)
+  // Lukas: C36 (Anna Ribbeck), Anouk Eckart, Alina Batalov (3x 60m mit je 15m Wegzeit)
   assign(9, cLukas.name, toM("10:45"), 60);  // Anna Ribbeck
   assign(13, cLukas.name, toM("12:00"), 60); // Anouk Eckart
   assign(16, cLukas.name, toM("13:15"), 60); // Alina Batalov
@@ -640,6 +721,7 @@ function render() {
   var isNowVisible = (nowM >= range.start && nowM <= range.end);
   var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
 
+  // GRUPPEN IN DER PRIORISIERTEN REIHENFOLGE RENDERN
   GROUPS.forEach(function(grp) {
     var peopleInGroup = appData.people.filter(function(p){ return p.group === grp.name; });
     if (peopleInGroup.length === 0 && grp.type !== "stage") return;
@@ -651,29 +733,33 @@ function render() {
     metaBox.className = "group-header-meta";
 
     if (grp.type === "stage") {
-      metaBox.innerHTML = "<div><span class='badge-stage " + grp.badgeClass + "'>" + grp.stageKey + "</span></div><span style='font-size:0.68rem; color:#94a3b8;'>Partner-Ablösung</span>";
+      metaBox.innerHTML = "<div><span class='badge-stage " + grp.badgeClass + "'>" + grp.stageKey + "</span></div><span style='font-size:0.68rem; color:#94a3b8; font-weight:normal;'>Partner-Ablösung Host & Umbau</span>";
     } else {
-      metaBox.innerHTML = "<span>📁 " + grp.name + " (" + peopleInGroup.length + ")</span>";
+      metaBox.innerHTML = "<div>📁 " + grp.name + "</div><span style='font-size:0.68rem; color:#94a3b8; font-weight:normal;'>" + peopleInGroup.length + " Personen</span>";
     }
     gRow.appendChild(metaBox);
 
     var trackBox = document.createElement("div");
     trackBox.className = "group-header-track";
 
-    // SCHLANKE PROGRAMMLINIE
-    if (grp.type === "stage" && grp.programSlot) {
-      var pSlot = grp.programSlot;
-      var psS = toM(pSlot.start);
-      var psE = toM(pSlot.end);
-      var psDur = psE - psS;
-      if (psDur > 0) {
-        var pBar = document.createElement("div");
-        pBar.className = "stage-status-line";
-        pBar.style.left = Math.max(0, ((psS - range.start) / range.total) * 100) + "%";
-        pBar.style.width = ((psDur / range.total) * 100) + "%";
-        pBar.style.background = pSlot.color;
-        trackBox.appendChild(pBar);
-      }
+    // ECHTES BÜHNENPROGRAMM DIREKT IM HEADER DES ZEITSTRAHLS (Alle Sessions als Blöcke)
+    if (grp.type === "stage" && STAGE_SCHEDULES[grp.stageKey]) {
+      var sessions = STAGE_SCHEDULES[grp.stageKey];
+      sessions.forEach(function(ses) {
+        var sesS = toM(ses.start);
+        var sesE = toM(ses.end);
+        var sesDur = sesE - sesS;
+        if (sesDur > 0) {
+          var pBar = document.createElement("div");
+          pBar.className = "stage-session-pill";
+          pBar.style.left = Math.max(0, ((sesS - range.start) / range.total) * 100) + "%";
+          pBar.style.width = ((sesDur / range.total) * 100) + "%";
+          pBar.style.background = grp.color;
+          pBar.title = ses.start + " - " + ses.end + ": " + ses.title;
+          pBar.innerText = ses.start + " " + ses.title;
+          trackBox.appendChild(pBar);
+        }
+      });
     }
 
     gRow.appendChild(trackBox);
@@ -1005,7 +1091,6 @@ function deleteModal() {
   render();
 }
 
-// SPRINGER VERWALTEN
 function openCoversModal() {
   var box = document.getElementById("covers-list-box");
   box.innerHTML = "";
@@ -1063,7 +1148,6 @@ function saveCoversModal() {
   render();
 }
 
-// TEAM BEARBEITEN
 function openTeamModal() {
   var box = document.getElementById("team-edit-box");
   box.innerHTML = "";
