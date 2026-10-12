@@ -56,12 +56,10 @@
     .badge-purple { background: #9333ea; color: #fff; }
     .badge-plaza { background: #0284c7; color: #fff; }
 
-    /* DEZENTER PROGRAMM-BALKEN IM HEADER */
-    .header-program-bar {
-      position: absolute; top: 6px; height: 20px; border-radius: 3px;
-      font-size: 0.65rem; font-weight: 800; color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0.9; box-shadow: 0 1px 3px rgba(0,0,0,0.5); pointer-events: none;
+    /* SCHLANKE PROGRAMM-STATUSLINIE IM HEADER */
+    .stage-status-line {
+      position: absolute; top: 10px; height: 11px; border-radius: 6px;
+      opacity: 0.95; box-shadow: 0 0 6px rgba(0,0,0,0.6); pointer-events: none;
     }
 
     .gantt-row { display: flex; height: 38px; border-bottom: 1px solid #1a2744; position: relative; align-items: center; }
@@ -74,7 +72,7 @@
 
     .row-track { flex: 1; height: 100%; position: relative; background: #0f172a; }
 
-    /* HOVER-PLUS FÜR PARTNER-ZEILEN */
+    /* HOVER-BUTTON BEI PARTNERN */
     .row-hover-btn {
       position: absolute; right: 12px; top: 7px; height: 24px; padding: 0 8px;
       background: #0284c7; color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 4px;
@@ -157,7 +155,7 @@
   <div class="top-bar">
     <div>
       <h1>Smart Country Convention 2026 – Pausen-Planer</h1>
-      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Rückwärts-Taktung (Späte Pausen) • 15m Wegzeit garantiert • Hover-Plus für Partner • Tourensperren</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Bühnen-Statuslinien • Priorisierte Gruppen • Voll bereinigt (Ohne BackUps)</div>
     </div>
     <div class="btn-group">
       <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
@@ -290,35 +288,35 @@ var GROUPS = [
     type: "stage", 
     badgeClass: "badge-plaza",
     stageKey: "Plaza Stage",
-    programSlot: { start: "10:00", end: "16:00", label: "Programm aktiv (10:00 - 16:00)", color: "#0284c7" }
+    programSlot: { start: "10:00", end: "16:00", color: "#0284c7" }
   },
   { 
     name: "Red Stage (hub27)", 
     type: "stage", 
     badgeClass: "badge-red",
     stageKey: "Red Stage",
-    programSlot: { start: "11:00", end: "17:15", label: "Programm aktiv (11:00 - 17:15)", color: "#dc2626" }
+    programSlot: { start: "11:00", end: "17:15", color: "#dc2626" }
   },
   { 
     name: "Green Stage (Halle 25)", 
     type: "stage", 
     badgeClass: "badge-green",
     stageKey: "Green Stage",
-    programSlot: { start: "11:30", end: "17:00", label: "Programm aktiv (11:30 - 17:00)", color: "#16a34a" }
+    programSlot: { start: "11:00", end: "17:15", color: "#16a34a" }
   },
   { 
     name: "Yellow Stage (Halle 26)", 
     type: "stage", 
     badgeClass: "badge-yellow",
     stageKey: "Yellow Stage",
-    programSlot: { start: "11:55", end: "17:45", label: "Programm aktiv (11:55 - 17:45)", color: "#ca8a04" }
+    programSlot: { start: "11:25", end: "17:30", color: "#ca8a04" }
   },
   { 
     name: "Purple Stage (Halle 26)", 
     type: "stage", 
     badgeClass: "badge-purple",
     stageKey: "Purple Stage",
-    programSlot: { start: "11:30", end: "17:15", label: "Programm aktiv (11:30 - 17:15)", color: "#9333ea" }
+    programSlot: { start: "11:30", end: "17:15", color: "#9333ea" }
   }
 ];
 
@@ -379,11 +377,11 @@ var appData = {
 };
 
 function persist() {
-  try { localStorage.setItem("sccon26_clean_v6", JSON.stringify(appData)); } catch(e){}
+  try { localStorage.setItem("sccon26_clean_v7", JSON.stringify(appData)); } catch(e){}
 }
 
 var loaded = null;
-try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v6")); } catch(e){}
+try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v7")); } catch(e){}
 if (loaded && loaded.covers && loaded.covers.length > 0) appData = loaded;
 
 function toM(str) {
@@ -436,10 +434,9 @@ function renderTicks(range) {
 }
 
 // LOGISCHE AUTO-VERTEILUNG:
-// 1. Teilt NUR die 7 externen Posten ein! Partner- und Bühnenposten bleiben unberührt.
-// 2. Taktet VON HINTEN (späteste Pausen zuerst), sauber mit 15m Wegzeit-Puffer.
+// 1. Nur die 7 externen Posten (5 Infocounter + Anouk + Alina)
+// 2. Rückwärts-Taktung (Spätere Pausen bevorzugt)
 function autoDistribute() {
-  // Alle Pausen leeren
   appData.people.forEach(function(p){ p.p = null; p.p2 = null; });
 
   var cNoah = appData.covers[0] || { name: "Noah Böhme", end: "14:30" };
@@ -457,25 +454,15 @@ function autoDistribute() {
     }
   }
 
-  // --- RÜCKWÄRTS-TAKTUNG FÜR NOAH (C29 & C31) ---
-  // Slot 2 (spät): 13:15 - 14:15 Uhr
-  // Slot 1 (mittags): 12:00 - 13:00 Uhr (15m Wegzeit zwischen 13:00 und 13:15!)
+  // Noah: C29 & C31
   assign(2, cNoah.name, toM("12:00"), 60); // Jessica Irungu
   assign(3, cNoah.name, toM("13:15"), 60); // Martina Errickson
 
-  // --- RÜCKWÄRTS-TAKTUNG FÜR AURELIA (C33 & C34) ---
-  // Slot 2 (spät): 13:15 - 14:15 Uhr
-  // Slot 1 (mittags): 12:00 - 13:00 Uhr
+  // Aurelia: C33 & C34
   assign(6, cAurelia.name, toM("12:00"), 60); // Vivek Majithia
   assign(7, cAurelia.name, toM("13:15"), 60); // Mariia Romaniuk
 
-  // --- 3 SLOTS FÜR LUKAS (C36, Anouk Eckart, Alina Batalov) ---
-  // Mit jeweils sauberem 15m Wegzeitpuffer:
-  // Slot 1: 10:45 - 11:45 Uhr
-  // Wegzeit: 11:45 - 12:00 Uhr (15 Min!)
-  // Slot 2: 12:00 - 13:00 Uhr
-  // Wegzeit: 13:00 - 13:15 Uhr (15 Min!)
-  // Slot 3: 13:15 - 14:15 Uhr (Fertig vor 14:30 Uhr!)
+  // Lukas: C36, Anouk Eckart, Alina Batalov (3x 60m mit je 15m Wegzeit)
   assign(9, cLukas.name, toM("10:45"), 60);  // Anna Ribbeck
   assign(13, cLukas.name, toM("12:00"), 60); // Anouk Eckart
   assign(16, cLukas.name, toM("13:15"), 60); // Alina Batalov
@@ -652,6 +639,7 @@ function render() {
   var isNowVisible = (nowM >= range.start && nowM <= range.end);
   var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
 
+  // GRUPPEN IN DER PRIORISIERTEN REIHENFOLGE
   GROUPS.forEach(function(grp) {
     var peopleInGroup = appData.people.filter(function(p){ return p.group === grp.name; });
     if (peopleInGroup.length === 0 && grp.type !== "stage") return;
@@ -672,7 +660,7 @@ function render() {
     var trackBox = document.createElement("div");
     trackBox.className = "group-header-track";
 
-    // DEZENTE PROGRAMMLINIE DIREKT IM HEADER DES ZEITSTRAHLS
+    // SCHLANKE STATUSLINIE FÜR DAS BÜHNENPROGRAMM
     if (grp.type === "stage" && grp.programSlot) {
       var pSlot = grp.programSlot;
       var psS = toM(pSlot.start);
@@ -680,11 +668,10 @@ function render() {
       var psDur = psE - psS;
       if (psDur > 0) {
         var pBar = document.createElement("div");
-        pBar.className = "header-program-bar";
+        pBar.className = "stage-status-line";
         pBar.style.left = Math.max(0, ((psS - range.start) / range.total) * 100) + "%";
         pBar.style.width = ((psDur / range.total) * 100) + "%";
         pBar.style.background = pSlot.color;
-        pBar.innerText = "🎤 " + pSlot.label;
         trackBox.appendChild(pBar);
       }
     }
@@ -706,7 +693,7 @@ function render() {
       var track = document.createElement("div");
       track.className = "row-track";
 
-      // HOVER-BUTTON ZUM EINFACHEN PAUSE-EINTRAGEN BEI PARTNERN/LEEREN REIHEN
+      // HOVER-BUTTON ZUM EINTRAGEN VON PAUSEN
       var hoverBtn = document.createElement("button");
       hoverBtn.className = "row-hover-btn";
       hoverBtn.innerHTML = "+ Pause eintragen";
@@ -933,7 +920,7 @@ function openModal(pId) {
   document.getElementById("m-title").innerText = p.name + " (" + p.desc + ")";
   
   // 1. Pause
-  document.getElementById("m-start").value = p.p ? p.p.start : (p.partner ? "12:00" : "12:00");
+  document.getElementById("m-start").value = p.p ? p.p.start : "12:00";
   document.getElementById("m-dur").value = p.p ? p.p.dur : (p.partner ? 45 : 60);
 
   var covOptions = '<option value="">-- Fester Springer / Partner --</option>' + 
@@ -959,7 +946,7 @@ function openModal(pId) {
     document.getElementById("m-p2-start").value = p.p2.start;
     document.getElementById("m-p2-dur").value = p.p2.dur;
     sel2.value = p.p2.cover;
-    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; }) && p.p2.cover !== p.partner) ? p.p2.cover : "";
+    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; })) ? p.p2.cover : "";
   } else {
     chk2.checked = false;
     document.getElementById("m-p2-start").value = "14:30";
@@ -1018,7 +1005,6 @@ function deleteModal() {
   render();
 }
 
-// SPRINGER VERWALTEN
 function openCoversModal() {
   var box = document.getElementById("covers-list-box");
   box.innerHTML = "";
@@ -1076,7 +1062,6 @@ function saveCoversModal() {
   render();
 }
 
-// TEAM BEARBEITEN
 function openTeamModal() {
   var box = document.getElementById("team-edit-box");
   box.innerHTML = "";
