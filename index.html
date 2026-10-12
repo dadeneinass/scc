@@ -38,22 +38,34 @@
     .timeline-head { height: 32px; display: flex; margin-left: 290px; border-bottom: 1px solid var(--border); position: relative; background: #080d1a; }
     .tick-label { position: absolute; transform: translateX(-50%); font-size: 0.7rem; color: var(--muted); font-weight: 600; top: 8px; }
 
-    /* KATEGORIEN & BÜHNEN */
-    .group-header {
-      background: #18243c; color: #fff; font-size: 0.82rem; font-weight: 800; padding: 7px 12px;
-      border-bottom: 1px solid var(--border); border-top: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
+    /* GRUPPEN-HEADER */
+    .group-header-row {
+      display: flex; height: 32px; background: #18243c; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border);
+      align-items: center; position: relative;
     }
-    .badge-stage { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 900; font-size: 0.75rem; }
+    .group-header-meta {
+      width: 290px; min-width: 290px; padding: 0 10px; font-size: 0.82rem; font-weight: 800; color: #fff;
+      display: flex; align-items: center; justify-content: space-between; border-right: 1px solid var(--border);
+    }
+    .group-header-track { flex: 1; height: 100%; position: relative; background: #131d33; }
+
+    .badge-stage { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 900; font-size: 0.75rem; }
     .badge-red { background: #dc2626; color: #fff; }
     .badge-green { background: #16a34a; color: #fff; }
     .badge-yellow { background: #ca8a04; color: #000; }
     .badge-purple { background: #9333ea; color: #fff; }
     .badge-plaza { background: #0284c7; color: #fff; }
 
+    /* DEZENTER PROGRAMM-BALKEN IM HEADER */
+    .header-program-bar {
+      position: absolute; top: 6px; height: 20px; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 800; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0.9; box-shadow: 0 1px 3px rgba(0,0,0,0.5); pointer-events: none;
+    }
+
     .gantt-row { display: flex; height: 38px; border-bottom: 1px solid #1a2744; position: relative; align-items: center; }
     .gantt-row:nth-child(even) { background: rgba(255,255,255,0.012); }
-    .gantt-row-stage { background: rgba(30, 41, 59, 0.4); height: 28px; border-bottom: 1px dashed var(--border); }
     
     .row-meta { width: 290px; min-width: 290px; padding: 0 10px; border-right: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .row-name { font-size: 0.78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
@@ -62,7 +74,7 @@
 
     .row-track { flex: 1; height: 100%; position: relative; background: #0f172a; }
 
-    /* AUSGRAUEN: VOR/NACH DIENST */
+    /* AUSGRAUEN VOR/NACH DIENST */
     .off-duty-zone {
       position: absolute; top: 0; bottom: 0;
       background: repeating-linear-gradient(45deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9) 8px, rgba(30, 41, 59, 0.7) 8px, rgba(30, 41, 59, 0.7) 16px);
@@ -76,16 +88,7 @@
       border-left: 2px dashed #f59e0b; border-right: 2px dashed #f59e0b;
       z-index: 2; pointer-events: none;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.62rem; color: #fde68a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
-    }
-
-    /* BÜHNEN PROGRAMM-BALKEN (Synchron zur Timeline) */
-    .stage-event-bar {
-      position: absolute; top: 3px; height: 22px; border-radius: 3px;
-      font-size: 0.68rem; font-weight: 800; color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 3; box-shadow: 0 1px 4px rgba(0,0,0,0.4); cursor: pointer;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px;
+      font-size: 0.62rem; color: #fde68a; font-weight: 800; text-transform: uppercase;
     }
 
     /* ROTE LIVE-LINIE */
@@ -145,7 +148,7 @@
   <div class="top-bar">
     <div>
       <h1>Smart Country Convention 2026 – Pausen-Planer</h1>
-      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Bühnen-Eventleiste synchronisiert • Tour-Sperrzeiten • 2. Pause optional • Ausgrauen & Warnung aktiv</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Priorisierte Gruppen • Partner-Kollisionsschutz • Dezente Bühnenlinie im Header</div>
     </div>
     <div class="btn-group">
       <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
@@ -165,7 +168,7 @@
   </div>
 
   <div class="table-card">
-    <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:12px;">Aktive Stationen & Touren</h3>
+    <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:12px;">Aktive Stationen (Nach Priorität sortiert)</h3>
     <table>
       <thead>
         <tr>
@@ -181,7 +184,7 @@
     </table>
   </div>
 
-  <!-- MODAL: PAUSEN BEARBEITEN (INKL. 2. PAUSE) -->
+  <!-- MODAL: PAUSEN BEARBEITEN -->
   <div class="modal" id="edit-modal" style="display:none;" onclick="closeModal()">
     <div class="modal-box" onclick="event.stopPropagation()">
       <h3 style="color:var(--primary); margin-bottom:10px;" id="m-title">Pausen anpassen</h3>
@@ -244,31 +247,6 @@
     </div>
   </div>
 
-  <!-- MODAL: BÜHNEN EVENT BEARBEITEN -->
-  <div class="modal" id="stage-modal" style="display:none;" onclick="closeStageModal()">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h3 style="color:var(--primary); margin-bottom:8px;" id="st-modal-title">Bühnen-Event</h3>
-      <div style="margin-bottom:10px;">
-        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:3px;">Event-Titel / Thema:</label>
-        <input type="text" id="st-title" style="width:100%; font-weight:bold;">
-      </div>
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <div style="flex:1;">
-          <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:3px;">Start:</label>
-          <input type="time" id="st-start" style="width:100%;">
-        </div>
-        <div style="flex:1;">
-          <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:3px;">Ende:</label>
-          <input type="time" id="st-end" style="width:100%;">
-        </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; gap:6px;">
-        <button style="flex:1; background:var(--primary); color:#000;" onclick="saveStageModal()">Speichern</button>
-        <button id="st-del-btn" style="background:transparent; border:1px solid var(--danger); color:var(--danger);" onclick="deleteStageModal()">Löschen</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: SPRINGER VERWALTEN -->
   <div class="modal" id="covers-modal" style="display:none;" onclick="closeCoversModal()">
     <div class="modal-box" onclick="event.stopPropagation()" style="width:540px;">
@@ -294,48 +272,50 @@
   </div>
 
 <script>
-// SYNCHRONISIERTE BÜHNEN-EVENTS (Echtes SCCON26 Zeitraster)
-var stageEvents = {
-  "Plaza Stage": [
-    { id: 1, title: "Opening SCCON26", start: "10:00", end: "10:55", color: "#0284c7" },
-    { id: 2, title: "Modernisierungsagenda", start: "11:00", end: "11:45", color: "#0284c7" },
-    { id: 3, title: "Keynote BMELH", start: "12:00", end: "12:15", color: "#0284c7" },
-    { id: 4, title: "Smart City Awards", start: "13:00", end: "14:15", color: "#0284c7" },
-    { id: 5, title: "Souveränität & Cloud", start: "14:15", end: "15:30", color: "#0284c7" }
-  ],
-  "Red Stage": [
-    { id: 6, title: "Smart City von morgen", start: "11:00", end: "11:45", color: "#dc2626" },
-    { id: 7, title: "Bürokratieentlastung", start: "12:30", end: "13:15", color: "#dc2626" },
-    { id: 8, title: "Zukunft Sozialversicherung", start: "14:00", end: "14:45", color: "#dc2626" },
-    { id: 9, title: "Register-as-a-Service", start: "15:30", end: "16:15", color: "#dc2626" }
-  ],
-  "Green Stage": [
-    { id: 10, title: "Kommunale Digitalisierung", start: "11:30", end: "12:15", color: "#16a34a" },
-    { id: 11, title: "Resiliente Städte", start: "13:00", end: "13:45", color: "#16a34a" },
-    { id: 12, title: "Partnerland Portugal", start: "14:15", end: "14:45", color: "#16a34a" },
-    { id: 13, title: "Open Data Praxis", start: "15:45", end: "16:30", color: "#16a34a" }
-  ],
-  "Yellow Stage": [
-    { id: 14, title: "Tech Impuls", start: "11:55", end: "12:30", color: "#ca8a04" },
-    { id: 15, title: "Cyberresilienz", start: "13:30", end: "14:15", color: "#ca8a04" },
-    { id: 16, title: "Smart Region Showcase", start: "15:00", end: "15:45", color: "#ca8a04" }
-  ],
-  "Purple Stage": [
-    { id: 17, title: "Opening Learning State", start: "11:30", end: "12:15", color: "#9333ea" },
-    { id: 18, title: "Bildung digital", start: "13:30", end: "14:15", color: "#9333ea" },
-    { id: 19, title: "Krisenfeste Kommunen", start: "15:00", end: "15:45", color: "#9333ea" }
-  ]
-};
-
+// EXAKTE REIHENFOLGE NACH PRIORITÄT:
+// 1. Extras & Wegeleitung
+// 2. Infocounter mit Pausenspringerbedarf
+// 3. Infocounter ohne Pausenspringerbedarf (Selbstablösung)
+// 4. Stages
 var GROUPS = [
-  { name: "Infocounter (Selbstablösung / Doppelbesetzung)", type: "partner" },
+  { name: "Extras & Wegeleitung", type: "extras" },
   { name: "Infocounter (Pausenspringer-Bedarf)", type: "springer" },
-  { name: "Plaza Stage (hub27)", type: "stage", stageKey: "Plaza Stage", badgeClass: "badge-plaza" },
-  { name: "Red Stage (hub27)", type: "stage", stageKey: "Red Stage", badgeClass: "badge-red" },
-  { name: "Green Stage (Halle 25)", type: "stage", stageKey: "Green Stage", badgeClass: "badge-green" },
-  { name: "Yellow Stage (Halle 26)", type: "stage", stageKey: "Yellow Stage", badgeClass: "badge-yellow" },
-  { name: "Purple Stage (Halle 26)", type: "stage", stageKey: "Purple Stage", badgeClass: "badge-purple" },
-  { name: "Extras & Wegeleitung", type: "extras" }
+  { name: "Infocounter (Selbstablösung / Doppelbesetzung)", type: "partner" },
+  { 
+    name: "Plaza Stage (hub27)", 
+    type: "stage", 
+    badgeClass: "badge-plaza",
+    stageKey: "Plaza Stage",
+    programSlot: { start: "10:00", end: "16:00", label: "Programm aktiv (10:00 - 16:00)", color: "#0284c7" }
+  },
+  { 
+    name: "Red Stage (hub27)", 
+    type: "stage", 
+    badgeClass: "badge-red",
+    stageKey: "Red Stage",
+    programSlot: { start: "11:00", end: "17:15", label: "Programm aktiv (11:00 - 17:15)", color: "#dc2626" }
+  },
+  { 
+    name: "Green Stage (Halle 25)", 
+    type: "stage", 
+    badgeClass: "badge-green",
+    stageKey: "Green Stage",
+    programSlot: { start: "11:30", end: "17:00", label: "Programm aktiv (11:30 - 17:00)", color: "#16a34a" }
+  },
+  { 
+    name: "Yellow Stage (Halle 26)", 
+    type: "stage", 
+    badgeClass: "badge-yellow",
+    stageKey: "Yellow Stage",
+    programSlot: { start: "11:55", end: "17:45", label: "Programm aktiv (11:55 - 17:45)", color: "#ca8a04" }
+  },
+  { 
+    name: "Purple Stage (Halle 26)", 
+    type: "stage", 
+    badgeClass: "badge-purple",
+    stageKey: "Purple Stage",
+    programSlot: { start: "11:30", end: "17:15", label: "Programm aktiv (11:30 - 17:15)", color: "#9333ea" }
+  }
 ];
 
 // TOUREN-SPERRZEITEN FÜR DARIUS & ELENA AN C35
@@ -351,7 +331,18 @@ var appData = {
     { id: 203, name: "Lukas Becker", start: "10:30", end: "14:30", color: "#9333ea" }
   ],
   people: [
-    // 1. INFOCOUNTER DOPPELBESETZUNG
+    // 1. EXTRAS & WEGELEITUNG (Ganz oben)
+    { id: 13, name: "Anouk Eckart", desc: "Wegeleitung VIP hub27", group: "Extras & Wegeleitung", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
+    { id: 16, name: "Alina Batalov", desc: "Meetingräume Kassel 1+2", group: "Extras & Wegeleitung", sStart: "08:00", sEnd: "18:00", p: null, p2: null },
+
+    // 2. INFOCOUNTER EINZELBESETZT (SPRINGER-BEDARF)
+    { id: 2, name: "Jessica Irungu", desc: "C29 Halle 25", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
+    { id: 3, name: "Martina Errickson", desc: "C31 hub27", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
+    { id: 6, name: "Vivek Majithia", desc: "C33 Halle 26b/620", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
+    { id: 7, name: "Mariia Romaniuk", desc: "C34 Halle 26a/315", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
+    { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "17:30", p: null, p2: null },
+
+    // 3. INFOCOUNTER SELBSTABLÖSUNG / DOPPELBESETZUNG
     { id: 1, name: "Ridda Anmol Mirza", desc: "C30 hub27", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "07:00", sEnd: "18:00", p: null, p2: null, partner: "Felicitas Schubert" },
     { id: 15, name: "Felicitas Schubert", desc: "C30 hub27 (bis 13:30)", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "08:00", sEnd: "13:30", p: null, p2: null, partner: "Ridda Anmol Mirza" },
     { id: 4, name: "Anouk Hrestak", desc: "C32 Halle 26c/100b", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "07:30", sEnd: "19:00", p: null, p2: null, partner: "Meyra Keles" },
@@ -360,53 +351,36 @@ var appData = {
     { id: 30, name: "Darius-Marvin Westerhold", desc: "C35 Halle 26a (Tour-Sperren)", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "11:30", sEnd: "18:00", p: null, p2: null, partner: "Anna Steiger", hasTourBlock: true },
     { id: 31, name: "Elena Reshetnikova", desc: "C35 Halle 26a (Tour-Sperren)", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "11:30", sEnd: "18:00", p: null, p2: null, partner: "Anna Steiger", hasTourBlock: true },
 
-    // 2. INFOCOUNTER EINZELBESETZT (SPRINGER)
-    { id: 2, name: "Jessica Irungu", desc: "C29 Halle 25", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 3, name: "Martina Errickson", desc: "C31 hub27", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 6, name: "Vivek Majithia", desc: "C33 Halle 26b/620", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 7, name: "Mariia Romaniuk", desc: "C34 Halle 26a/315", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "17:30", p: null, p2: null },
-
-    // 3. PLAZA STAGE
+    // 4. STAGES
+    // Plaza Stage
     { id: 18, name: "Elisha Dalmis", desc: "Plaza Stage (Host)", group: "Plaza Stage (hub27)", sStart: "09:00", sEnd: "17:15", p: null, p2: null, partner: "Oluwafemi Joel Brown" },
     { id: 17, name: "Oluwafemi Joel Brown", desc: "Plaza Stage (Umbau)", group: "Plaza Stage (hub27)", sStart: "08:30", sEnd: "17:30", p: null, p2: null, partner: "Elisha Dalmis" },
 
-    // 4. RED STAGE
+    // Red Stage
     { id: 20, name: "Melina Jantke", desc: "Red Stage (Host)", group: "Red Stage (hub27)", sStart: "10:00", sEnd: "18:15", p: null, p2: null, partner: "Finn Heyse" },
     { id: 22, name: "Finn Heyse", desc: "Red Stage (Umbau)", group: "Red Stage (hub27)", sStart: "10:00", sEnd: "18:15", p: null, p2: null, partner: "Melina Jantke" },
 
-    // 5. GREEN STAGE
+    // Green Stage
     { id: 21, name: "Luna Feucht", desc: "Green Stage (Host)", group: "Green Stage (Halle 25)", sStart: "10:00", sEnd: "18:15", p: null, p2: null, partner: "Arthur Garner" },
     { id: 23, name: "Arthur Garner", desc: "Green Stage (Umbau)", group: "Green Stage (Halle 25)", sStart: "10:00", sEnd: "18:30", p: null, p2: null, partner: "Luna Feucht" },
 
-    // 6. YELLOW STAGE
+    // Yellow Stage
     { id: 25, name: "Erika Bellm", desc: "Yellow Stage (Host)", group: "Yellow Stage (Halle 26)", sStart: "10:15", sEnd: "18:15", p: null, p2: null, partner: "Cairo Würdig" },
     { id: 19, name: "Cairo Würdig", desc: "Yellow Stage (Umbau)", group: "Yellow Stage (Halle 26)", sStart: "09:45", sEnd: "18:30", p: null, p2: null, partner: "Erika Bellm" },
 
-    // 7. PURPLE STAGE
+    // Purple Stage
     { id: 26, name: "Daniel Yakoub", desc: "Purple Stage (Host)", group: "Purple Stage (Halle 26)", sStart: "10:15", sEnd: "18:15", p: null, p2: null, partner: "Johann Stapel" },
-    { id: 24, name: "Johann Stapel", desc: "Purple Stage (Umbau)", group: "Purple Stage (Halle 26)", sStart: "10:15", sEnd: "18:15", p: null, p2: null, partner: "Daniel Yakoub" },
-
-    // 8. EXTRAS & WEGELEITUNG
-    { id: 13, name: "Anouk Eckart", desc: "Wegeleitung VIP hub27", group: "Extras & Wegeleitung", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 16, name: "Alina Batalov", desc: "Meetingräume Kassel 1+2", group: "Extras & Wegeleitung", sStart: "08:00", sEnd: "18:00", p: null, p2: null }
+    { id: 24, name: "Johann Stapel", desc: "Purple Stage (Umbau)", group: "Purple Stage (Halle 26)", sStart: "10:15", sEnd: "18:15", p: null, p2: null, partner: "Daniel Yakoub" }
   ]
 };
 
 function persist() {
-  try {
-    localStorage.setItem("sccon26_clean_v4", JSON.stringify(appData));
-    localStorage.setItem("sccon26_stage_events", JSON.stringify(stageEvents));
-  } catch(e){}
+  try { localStorage.setItem("sccon26_clean_v5", JSON.stringify(appData)); } catch(e){}
 }
 
 var loaded = null;
-try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v4")); } catch(e){}
+try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v5")); } catch(e){}
 if (loaded && loaded.covers && loaded.covers.length > 0) appData = loaded;
-
-var loadedEvents = null;
-try { loadedEvents = JSON.parse(localStorage.getItem("sccon26_stage_events")); } catch(e){}
-if (loadedEvents) stageEvents = loadedEvents;
 
 function toM(str) {
   if (!str) return 0;
@@ -426,8 +400,8 @@ function getCurrentMinutes() {
 }
 
 function getDynamicRange() {
-  var starts = [420]; // ab 07:00
-  var ends = [1140];  // bis 19:00
+  var starts = [420]; // 07:00
+  var ends = [1140];  // 19:00
 
   var nowM = getCurrentMinutes();
   if (nowM >= 420 && nowM <= 1260) {
@@ -457,7 +431,8 @@ function renderTicks(range) {
   }
 }
 
-// LOGISCHE AUTO-VERTEILUNG
+// LOGISCHE AUTO-VERTEILUNG:
+// Springer decken alle 7 Posten ab (5 Infocounter + Anouk + Alina)
 function autoDistribute() {
   appData.people.forEach(function(p){ p.p = null; p.p2 = null; });
 
@@ -465,9 +440,9 @@ function autoDistribute() {
   var cAurelia = appData.covers[1] || { name: "Aurelia Mayer", start: "10:30" };
   var cLukas = appData.covers[2] || { name: "Lukas Becker", start: "10:30" };
 
-  var tNoah = toM(cNoah.start || "10:30") + 15;
-  var tAurelia = toM(cAurelia.start || "10:30") + 15;
-  var tLukas = toM(cLukas.start || "10:30") + 15;
+  var tNoah = toM(cNoah.start || "10:30") + 15; // 10:45
+  var tAurelia = toM(cAurelia.start || "10:30") + 15; // 10:45
+  var tLukas = toM(cLukas.start || "10:30") + 15; // 10:45
 
   function assign(id, coverName, startTime, dur) {
     var person = appData.people.find(function(x){ return x.id === id; });
@@ -480,19 +455,20 @@ function autoDistribute() {
     }
   }
 
-  // Springer 1: C29 & C31
-  assign(2, cNoah.name, tNoah, 60);
-  assign(3, cNoah.name, tNoah + 75, 60);
+  // Springer 1 (Noah Böhme): C29 & C31
+  assign(2, cNoah.name, tNoah, 60);      // Jessica Irungu (10:45)
+  assign(3, cNoah.name, tNoah + 75, 60); // Martina Errickson (12:00)
 
-  // Springer 2: C33 & C34
-  assign(6, cAurelia.name, tAurelia, 60);
-  assign(7, cAurelia.name, tAurelia + 75, 60);
+  // Springer 2 (Aurelia Mayer): C33 & C34
+  assign(6, cAurelia.name, tAurelia, 60);      // Vivek Majithia (10:45)
+  assign(7, cAurelia.name, tAurelia + 75, 60); // Mariia Romaniuk (12:00)
 
-  // Springer 3: C36 & Wegeleitung Anouk
-  assign(9, cLukas.name, tLukas, 60);
-  assign(13, cLukas.name, tLukas + 75, 60);
+  // Springer 3 (Lukas Becker): C36 + Anouk Eckart + Alina Batalov (3x 60m im 70m-Slot)
+  assign(9, cLukas.name, tLukas, 60);        // Anna Ribbeck (10:45 - 11:45)
+  assign(13, cLukas.name, tLukas + 70, 60);  // Anouk Eckart (11:55 - 12:55)
+  assign(16, cLukas.name, tLukas + 140, 60); // Alina Batalov (13:05 - 14:05)
 
-  // Partner-Stages
+  // Partner-Stages: Versetzte Pausen ab 12:00 Uhr
   var partnerPairs = [
     [18, 17], // Plaza Stage
     [20, 22], // Red Stage
@@ -562,6 +538,7 @@ function render() {
         desc: p.desc,
         sStart: p.sStart,
         sEnd: p.sEnd,
+        partner: p.partner,
         hasTourBlock: p.hasTourBlock,
         start: s1,
         dur: p.p.dur,
@@ -578,6 +555,7 @@ function render() {
         desc: p.desc,
         sStart: p.sStart,
         sEnd: p.sEnd,
+        partner: p.partner,
         hasTourBlock: p.hasTourBlock,
         start: s2,
         dur: p.p2.dur,
@@ -594,24 +572,37 @@ function render() {
 
   allBreaks.sort(function(a, b){ return a.start - b.start; });
 
-  // 1. Schichtzeit- und Tourensperren-Prüfung
+  // 1. Schichtzeit-, Tourensperren- & Partner-Kollisionsprüfung
   allBreaks.forEach(function(b) {
     var key = b.pId + "_" + b.breakIndex;
     
-    // Außerhalb Dienstzeit der Person?
+    // Außerhalb Arbeitszeit der Person?
     var pStartM = toM(b.sStart);
     var pEndM = toM(b.sEnd);
     if (b.start < pStartM || b.end > pEndM) {
       overtimeInfo[key] = "AUSSERHALB SCHICHT";
     }
 
-    // Liegt die Pause in einer Touren-Sperrzeit (Darius & Elena)?
+    // In Touren-Sperrzeit?
     if (b.hasTourBlock) {
       C35_BLOCKED_SLOTS.forEach(function(tb) {
         var tbS = toM(tb.start);
         var tbE = toM(tb.end);
         if (b.start < tbE && tbS < b.end) {
           overtimeInfo[key] = "IN TOUREN-SPERRE (" + tb.label + ")";
+        }
+      });
+    }
+
+    // Partner-Prüfung: Darf NICHT gleichzeitig Pause haben!
+    if (b.partner) {
+      var partnerBreaks = allBreaks.filter(function(x){ return x.pName === b.partner; });
+      partnerBreaks.forEach(function(pb) {
+        if (b.start < pb.end && pb.start < b.end) {
+          conflictBreakKeys.add(key);
+          conflictBreakKeys.add(pb.pId + "_" + pb.breakIndex);
+          overtimeInfo[key] = "PARTNER ZEITGLEICH IN PAUSE";
+          overtimeInfo[pb.pId + "_" + pb.breakIndex] = "PARTNER ZEITGLEICH IN PAUSE";
         }
       });
     }
@@ -629,7 +620,7 @@ function render() {
     }
   });
 
-  // 2. Konflikt- & Wegzeitprüfung
+  // 2. Springer-Konflikt- & Wegzeitprüfung
   for (var i = 0; i < allBreaks.length; i++) {
     for (var j = i + 1; j < allBreaks.length; j++) {
       var b1 = allBreaks[i];
@@ -673,55 +664,46 @@ function render() {
   var isNowVisible = (nowM >= range.start && nowM <= range.end);
   var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
 
+  // GRUPPEN IN DER GEWÜNSCHTEN REIHENFOLGE RENDERN
   GROUPS.forEach(function(grp) {
     var peopleInGroup = appData.people.filter(function(p){ return p.group === grp.name; });
     if (peopleInGroup.length === 0 && grp.type !== "stage") return;
 
-    var gHead = document.createElement("div");
-    gHead.className = "group-header";
+    var gRow = document.createElement("div");
+    gRow.className = "group-header-row";
+
+    var metaBox = document.createElement("div");
+    metaBox.className = "group-header-meta";
 
     if (grp.type === "stage") {
-      gHead.innerHTML = 
-        "<div><span class='badge-stage " + grp.badgeClass + "'>" + grp.stageKey + "</span> <span style='font-size:0.75rem; color:#94a3b8; margin-left:8px;'>Bühnenprogramm & Partner-Ablösung</span></div>" +
-        "<button style='background:#334155; color:#fff; padding:3px 8px; font-size:0.72rem;' onclick='openStageModal(\"" + grp.stageKey + "\")'>+ Event auf " + grp.stageKey + " anpassen</button>";
+      metaBox.innerHTML = "<div><span class='badge-stage " + grp.badgeClass + "'>" + grp.stageKey + "</span></div><span style='font-size:0.68rem; color:#94a3b8;'>Partner-Ablösung</span>";
     } else {
-      gHead.innerHTML = "<span>📁 " + grp.name + " (" + peopleInGroup.length + " Personen)</span>";
+      metaBox.innerHTML = "<span>📁 " + grp.name + " (" + peopleInGroup.length + ")</span>";
     }
-    gBody.appendChild(gHead);
+    gRow.appendChild(metaBox);
 
-    // EIGENE ZEILE FÜR DAS BÜHNENPROGRAMM
-    if (grp.type === "stage") {
-      var stageRow = document.createElement("div");
-      stageRow.className = "gantt-row gantt-row-stage";
+    var trackBox = document.createElement("div");
+    trackBox.className = "group-header-track";
 
-      var sMeta = document.createElement("div");
-      sMeta.className = "row-meta";
-      sMeta.innerHTML = "<div style='font-size:0.72rem; color:var(--muted); font-weight:bold;'>🎤 Live-Programm</div>";
-      stageRow.appendChild(sMeta);
-
-      var sTrack = document.createElement("div");
-      sTrack.className = "row-track";
-
-      var events = stageEvents[grp.stageKey] || [];
-      events.forEach(function(ev) {
-        var evS = toM(ev.start);
-        var evE = toM(ev.end);
-        var evDur = evE - evS;
-        if (evDur > 0) {
-          var evBar = document.createElement("div");
-          evBar.className = "stage-event-bar";
-          evBar.style.left = Math.max(0, ((evS - range.start) / range.total) * 100) + "%";
-          evBar.style.width = ((evDur / range.total) * 100) + "%";
-          evBar.style.background = ev.color || "#0284c7";
-          evBar.innerText = ev.start + " - " + ev.end + " " + ev.title;
-          evBar.onclick = function() { openStageModal(grp.stageKey, ev.id); };
-          sTrack.appendChild(evBar);
-        }
-      });
-
-      stageRow.appendChild(sTrack);
-      gBody.appendChild(stageRow);
+    // DEZENTE PROGRAMMLINIE DIREKT IM HEADER DES ZEITSTRAHLS
+    if (grp.type === "stage" && grp.programSlot) {
+      var pSlot = grp.programSlot;
+      var psS = toM(pSlot.start);
+      var psE = toM(pSlot.end);
+      var psDur = psE - psS;
+      if (psDur > 0) {
+        var pBar = document.createElement("div");
+        pBar.className = "header-program-bar";
+        pBar.style.left = Math.max(0, ((psS - range.start) / range.total) * 100) + "%";
+        pBar.style.width = ((psDur / range.total) * 100) + "%";
+        pBar.style.background = pSlot.color;
+        pBar.innerText = "🎤 " + pSlot.label;
+        trackBox.appendChild(pBar);
+      }
     }
+
+    gRow.appendChild(trackBox);
+    gBody.appendChild(gRow);
 
     // PERSONEN DER GRUPPE
     peopleInGroup.forEach(function(p) {
@@ -784,7 +766,7 @@ function render() {
         track.appendChild(nowLine);
       }
 
-      // 5. Alle Pausen rendern (p.p und p.p2)
+      // 5. Pausenbalken rendern
       var pBreaks = allBreaks.filter(function(x){ return x.pId === p.id; });
       pBreaks.forEach(function(b) {
         var bKey = b.pId + "_" + b.breakIndex;
@@ -802,7 +784,7 @@ function render() {
 
         if (isConflict) {
           warnClasses = "bar-conflict";
-          labelPrefix = "⚠️ DOPPELBELEGUNG: ";
+          labelPrefix = "⚠️ " + (isOvertime || "DOPPELBELEGUNG") + ": ";
         } else if (isOvertime) {
           warnClasses = "bar-overtime";
           labelPrefix = "⚠️ " + isOvertime + ": ";
@@ -928,7 +910,7 @@ function renderTable() {
       }
     }
 
-    var tourWarn = p.hasTourBlock ? '<div style="color:#f59e0b; font-size:0.7rem; margin-top:2px;">⚠️ Touren-Sperre: 13:30-14:15 & 15:30-16:15</div>' : '';
+    var tourWarn = p.hasTourBlock ? '<div style="color:#f59e0b; font-size:0.7rem; margin-top:2px;">⚠️ Touren: 13:30-14:15 & 15:30-16:15</div>' : '';
 
     tr.innerHTML = 
       '<td><b>' + p.name + '</b></td>' +
@@ -981,7 +963,7 @@ function openModal(pId) {
     document.getElementById("m-p2-start").value = p.p2.start;
     document.getElementById("m-p2-dur").value = p.p2.dur;
     sel2.value = p.p2.cover;
-    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; }) && p.p2.cover !== p.partner) ? p.p2.cover : "";
+    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; })) ? p.p2.cover : "";
   } else {
     chk2.checked = false;
     document.getElementById("m-p2-start").value = "14:30";
@@ -1038,73 +1020,6 @@ function deleteModal() {
   if (p) { p.p = null; p.p2 = null; persist(); }
   closeModal();
   render();
-}
-
-// BÜHNEN EVENTS BEARBEITEN
-var curStageKey = null;
-var curEventId = null;
-
-function openStageModal(stageKey, eventId) {
-  curStageKey = stageKey;
-  curEventId = eventId || null;
-  document.getElementById("st-modal-title").innerText = stageKey + " Event";
-
-  if (eventId) {
-    var ev = (stageEvents[stageKey] || []).find(function(x){ return x.id === eventId; });
-    if (ev) {
-      document.getElementById("st-title").value = ev.title;
-      document.getElementById("st-start").value = ev.start;
-      document.getElementById("st-end").value = ev.end;
-      document.getElementById("st-del-btn").style.display = "block";
-    }
-  } else {
-    document.getElementById("st-title").value = "Vortrag / Session";
-    document.getElementById("st-start").value = "11:00";
-    document.getElementById("st-end").value = "12:00";
-    document.getElementById("st-del-btn").style.display = "none";
-  }
-
-  document.getElementById("stage-modal").style.display = "flex";
-}
-
-function closeStageModal() { document.getElementById("stage-modal").style.display = "none"; }
-
-function saveStageModal() {
-  if (!stageEvents[curStageKey]) stageEvents[curStageKey] = [];
-  var title = document.getElementById("st-title").value.trim() || "Session";
-  var s = document.getElementById("st-start").value || "10:00";
-  var e = document.getElementById("st-end").value || "11:00";
-
-  var colorMap = {
-    "Plaza Stage": "#0284c7", "Red Stage": "#dc2626",
-    "Green Stage": "#16a34a", "Yellow Stage": "#ca8a04", "Purple Stage": "#9333ea"
-  };
-
-  if (curEventId) {
-    var ev = stageEvents[curStageKey].find(function(x){ return x.id === curEventId; });
-    if (ev) { ev.title = title; ev.start = s; ev.end = e; }
-  } else {
-    stageEvents[curStageKey].push({
-      id: Date.now(),
-      title: title,
-      start: s,
-      end: e,
-      color: colorMap[curStageKey] || "#3b82f6"
-    });
-  }
-
-  persist();
-  closeStageModal();
-  render();
-}
-
-function deleteStageModal() {
-  if (curStageKey && curEventId) {
-    stageEvents[curStageKey] = stageEvents[curStageKey].filter(function(x){ return x.id !== curEventId; });
-    persist();
-    closeStageModal();
-    render();
-  }
 }
 
 // SPRINGER VERWALTEN
