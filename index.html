@@ -155,7 +155,7 @@
   <div class="top-bar">
     <div>
       <h1>Smart Country Convention 2026 – Pausen-Planer</h1>
-      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Bühnen-Statuslinien • Priorisierte Gruppen • Voll bereinigt (Ohne BackUps)</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Priorisierte Gruppen • Sonja Kern ab 17:30 an C36 • Bühnen-Statuslinien • Tourensperren</div>
     </div>
     <div class="btn-group">
       <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
@@ -342,7 +342,9 @@ var appData = {
     { id: 3, name: "Martina Errickson", desc: "C31 hub27", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
     { id: 6, name: "Vivek Majithia", desc: "C33 Halle 26b/620", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
     { id: 7, name: "Mariia Romaniuk", desc: "C34 Halle 26a/315", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "18:00", p: null, p2: null },
-    { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "17:30", p: null, p2: null },
+    { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24 (bis 17:30)", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "07:30", sEnd: "17:30", p: null, p2: null },
+    // SONJA KERN DIREKT UNTER ANNA RIBBECK (aktiv erst ab 17:30 Uhr bis 20:00 Uhr)
+    { id: 32, name: "Sonja Kern", desc: "C36 Halle 24 / Spätschicht (ab 17:30)", group: "Infocounter (Pausenspringer-Bedarf)", sStart: "17:30", sEnd: "20:00", p: null, p2: null },
 
     // 3. INFOCOUNTER SELBSTABLÖSUNG / DOPPELBESETZUNG
     { id: 1, name: "Ridda Anmol Mirza", desc: "C30 hub27", group: "Infocounter (Selbstablösung / Doppelbesetzung)", sStart: "07:00", sEnd: "18:00", p: null, p2: null, partner: "Felicitas Schubert" },
@@ -377,11 +379,11 @@ var appData = {
 };
 
 function persist() {
-  try { localStorage.setItem("sccon26_clean_v7", JSON.stringify(appData)); } catch(e){}
+  try { localStorage.setItem("sccon26_clean_v8_sonja", JSON.stringify(appData)); } catch(e){}
 }
 
 var loaded = null;
-try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v7")); } catch(e){}
+try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v8_sonja")); } catch(e){}
 if (loaded && loaded.covers && loaded.covers.length > 0) appData = loaded;
 
 function toM(str) {
@@ -403,7 +405,7 @@ function getCurrentMinutes() {
 
 function getDynamicRange() {
   var starts = [420]; // 07:00
-  var ends = [1140];  // 19:00
+  var ends = [1200];  // 20:00 (Wegen Sonja Kern bis 20:00)
 
   var nowM = getCurrentMinutes();
   if (nowM >= 420 && nowM <= 1260) {
@@ -434,8 +436,7 @@ function renderTicks(range) {
 }
 
 // LOGISCHE AUTO-VERTEILUNG:
-// 1. Nur die 7 externen Posten (5 Infocounter + Anouk + Alina)
-// 2. Rückwärts-Taktung (Spätere Pausen bevorzugt)
+// Teilt ausschließlich die 7 Vollzeit-Posten mit Springerbedarf ein!
 function autoDistribute() {
   appData.people.forEach(function(p){ p.p = null; p.p2 = null; });
 
@@ -454,15 +455,15 @@ function autoDistribute() {
     }
   }
 
-  // Noah: C29 & C31
+  // Noah: C29 & C31 (Spätere Pausen: 12:00 und 13:15 Uhr)
   assign(2, cNoah.name, toM("12:00"), 60); // Jessica Irungu
   assign(3, cNoah.name, toM("13:15"), 60); // Martina Errickson
 
-  // Aurelia: C33 & C34
+  // Aurelia: C33 & C34 (Spätere Pausen: 12:00 und 13:15 Uhr)
   assign(6, cAurelia.name, toM("12:00"), 60); // Vivek Majithia
   assign(7, cAurelia.name, toM("13:15"), 60); // Mariia Romaniuk
 
-  // Lukas: C36, Anouk Eckart, Alina Batalov (3x 60m mit je 15m Wegzeit)
+  // Lukas: C36 (Anna Ribbeck), Anouk Eckart, Alina Batalov (3x 60m mit 15m Wegzeit)
   assign(9, cLukas.name, toM("10:45"), 60);  // Anna Ribbeck
   assign(13, cLukas.name, toM("12:00"), 60); // Anouk Eckart
   assign(16, cLukas.name, toM("13:15"), 60); // Alina Batalov
@@ -639,7 +640,6 @@ function render() {
   var isNowVisible = (nowM >= range.start && nowM <= range.end);
   var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
 
-  // GRUPPEN IN DER PRIORISIERTEN REIHENFOLGE
   GROUPS.forEach(function(grp) {
     var peopleInGroup = appData.people.filter(function(p){ return p.group === grp.name; });
     if (peopleInGroup.length === 0 && grp.type !== "stage") return;
@@ -660,7 +660,7 @@ function render() {
     var trackBox = document.createElement("div");
     trackBox.className = "group-header-track";
 
-    // SCHLANKE STATUSLINIE FÜR DAS BÜHNENPROGRAMM
+    // SCHLANKE PROGRAMMLINIE
     if (grp.type === "stage" && grp.programSlot) {
       var pSlot = grp.programSlot;
       var psS = toM(pSlot.start);
@@ -1005,6 +1005,7 @@ function deleteModal() {
   render();
 }
 
+// SPRINGER VERWALTEN
 function openCoversModal() {
   var box = document.getElementById("covers-list-box");
   box.innerHTML = "";
@@ -1062,6 +1063,7 @@ function saveCoversModal() {
   render();
 }
 
+// TEAM BEARBEITEN
 function openTeamModal() {
   var box = document.getElementById("team-edit-box");
   box.innerHTML = "";
