@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Country Convention 2026 – Pausen- & Einsatzplaner</title>
+  
+  <!-- html2canvas für hochauflösenden PNG-Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #131d33;
+      --border: #243354;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --stage-prog: rgba(245, 158, 11, 0.15);
+      --stage-prog-border: rgba(245, 158, 11, 0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 14px; min-width: 1240px; }
+    
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    .btn-group { display: flex; gap: 8px; }
+    button { cursor: pointer; border-radius: 6px; font-weight: 600; font-size: 0.8rem; padding: 7px 12px; border: none; transition: all 0.15s; }
+    button:hover { opacity: 0.9; }
+    .btn-auto { background: var(--warning); color: #000; font-weight: 700; }
+    .btn-shot { background: #22c55e; color: #000; font-weight: bold; }
+    .btn-util { background: #334155; color: #fff; border: 1px solid var(--border); }
+    .btn-reset { background: #334155; color: #fca5a5; border: 1px solid var(--border); }
+
+    .legend-bar { display: flex; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.78rem; flex-wrap: wrap; align-items: center; }
+    .badge-cov { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; font-weight: bold; color: #fff; }
+
+    /* GANTT CONTAINER & TIMELINE */
+    #capture-area { background: var(--bg); padding: 4px; border-radius: 8px; }
+    .gantt-container { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; position: relative; }
+    .timeline-head { height: 32px; display: flex; margin-left: 290px; border-bottom: 1px solid var(--border); position: relative; background: #080d1a; }
+    .tick-label { position: absolute; transform: translateX(-50%); font-size: 0.7rem; color: var(--muted); font-weight: 600; top: 8px; }
+
+    /* GRUPPIERUNGEN & STAGE-HEADER */
+    .group-header { 
+      background: #1e293b; 
+      color: #38bdf8; 
+      font-size: 0.82rem; 
+      font-weight: 800; 
+      padding: 6px 12px; 
+      border-bottom: 1px solid var(--border); 
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stage-sub-header {
+      background: #17233d;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-bottom: 1px solid #1f2e4d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stage-prog-bar-container {
+      flex: 1;
+      height: 24px;
+      position: relative;
+      margin-left: 12px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px dashed #334155;
+    }
+    .stage-slot-badge {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      background: var(--stage-prog);
+      border: 1px solid var(--stage-prog-border);
+      color: #fde047;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      padding: 0 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stage-slot-badge:hover {
+      background: rgba(245, 158, 11, 0.3);
+      border-color: #f59e0b;
+    }
+
+    /* GANTT ROWS */
+    .gantt-row { display: flex; height: 38px; border-bottom: 1px solid #1a2744; position: relative; align-items: center; }
+    .gantt-row:nth-child(even) { background: rgba(255,255,255,0.015); }
+    
+    .row-meta { width: 290px; min-width: 290px; padding: 0 10px; border-right: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .row-name { font-size: 0.78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-sub { font-size: 0.67rem; color: var(--muted); }
+    
+    .row-track { flex: 1; height: 100%; position: relative; }
+
+    /* ROTE LIVE-LINIE */
+    .now-indicator-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #ef4444;
+      z-index: 25;
+      pointer-events: none;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+    }
+    .now-indicator-badge {
+      position: absolute;
+      top: 3px;
+      transform: translateX(-50%);
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      z-index: 26;
+      pointer-events: none;
+    }
+
+    /* BALKEN & WARNUNGEN */
+    .bar {
+      position: absolute; top: 4px; height: 30px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.5); z-index: 2;
+      cursor: grab; user-select: none;
+    }
+    .bar:active { cursor: grabbing; box-shadow: 0 4px 12px rgba(0,0,0,0.8); z-index: 10; opacity: 0.9; }
+    
+    .bar-conflict { background: #dc2626 !important; border: 2px solid #fff !important; animation: blink 1s infinite alternate; }
+    .bar-overtime { background: repeating-linear-gradient(45deg, #b91c1c, #b91c1c 10px, #7f1d1d 10px, #7f1d1d 20px) !important; border: 2px solid #f87171 !important; }
+    .bar-wegzeit-danger { border: 2px dashed #ef4444 !important; }
+    .bar-wegzeit-warn { border: 2px dashed #f59e0b !important; }
+
+    @keyframes blink {
+      from { box-shadow: 0 0 4px #ef4444; }
+      to { box-shadow: 0 0 12px #f87171; }
+    }
+
+    /* TABELLE */
+    .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; padding: 10px 8px; color: var(--muted); border-bottom: 2px solid var(--border); font-weight: 700; }
+    td { padding: 8px; border-bottom: 1px solid #1a2744; vertical-align: middle; }
+    select, input[type="text"], input[type="time"], input[type="number"], input[type="color"] { background: #0c1424; border: 1px solid var(--border); color: #fff; padding: 5px 8px; border-radius: 4px; font-size: 0.8rem; }
+    .btn-edit { background: #243354; color: #fff; border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+    .btn-edit:hover { background: #334155; }
+
+    .status-fehlt { color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+    .status-selbst { color: var(--muted); font-style: italic; }
+
+    /* MODAL */
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 999; }
+    .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; width: 490px; max-height: 90vh; overflow-y: auto; padding: 16px; }
+    .modal-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 6px; }
+
+    body.screenshot-mode .table-card, 
+    body.screenshot-mode .btn-auto, 
+    body.screenshot-mode .btn-util, 
+    body.screenshot-mode .btn-reset { display: none !important; }
+    body.screenshot-mode .btn-shot { background: #f59e0b; color: #000; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div>
+      <h1>⚡ Smart Country Convention 2026 – Pausen- & Einsatzplaner</h1>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Infocounter, Stages & Extras • Stage-Vortragstracks • 5m-Raster • Feierabend- & Wegzeit-Check</div>
+    </div>
+    <div class="btn-group">
+      <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
+      <button class="btn-util" onclick="openTeamModal()">👥 Team bearbeiten</button>
+      <button class="btn-auto" onclick="autoDistribute()">⚡ Pausen automatisch verteilen</button>
+      <button class="btn-shot" id="shot-btn" onclick="captureAndDownload()">📸 Screenshot & Download</button>
+      <button class="btn-reset" onclick="clearBreaks()">Pausen leeren</button>
+    </div>
+  </div>
+
+  <div id="capture-area">
+    <div class="legend-bar" id="legend-box"></div>
+    <div class="gantt-container" id="gantt-main-container">
+      <div class="timeline-head" id="timeline-ticks"></div>
+      <div id="gantt-body"></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:12px;">Übersicht: Stationen & Pausenzuweisung</h3>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 20%;">Name</th>
+          <th style="width: 25%;">Position / Station</th>
+          <th style="width: 15%;">Bereich</th>
+          <th style="width: 14%;">Pausenzeit</th>
+          <th style="width: 16%;">Pausenvertretung</th>
+          <th style="width: 10%; text-align: center;">Aktion</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="modal" id="edit-modal" style="display:none;" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h3 style="color:var(--primary); margin-bottom:10px;" id="m-title">Pause anpassen</h3>
+      
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Pausenzeit (Start):</label>
+        <input type="time" id="m-start" style="width:100%; font-size:0.9rem; font-weight:bold;">
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Pausendauer in Minuten:</label>
+        <div style="display:flex; gap:6px;">
+          <input type="number" id="m-dur" min="10" max="180" step="5" style="flex:1; font-size:0.9rem; font-weight:bold;">
+          <select onchange="if(this.value) document.getElementById('m-dur').value = this.value" style="width:110px;">
+            <option value="">Vorlage...</option>
+            <option value="30">30 Min</option>
+            <option value="45">45 Min</option>
+            <option value="60">60 Min</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Pausenvertretung (Springer / Partner):</label>
+        <select id="m-cover" style="width:100%;"></select>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Oder freier Name / Partnertausch:</label>
+        <input type="text" id="m-custom" placeholder="z. B. Teampartner (Ablösung)..." style="width:100%;">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:6px; margin-top:16px;">
+        <button style="flex:1; background:var(--primary); color:#000;" onclick="saveModal()">Speichern</button>
+        <button style="background:transparent; border:1px solid var(--danger); color:var(--danger);" onclick="deleteModal()">Pause entfernen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="stage-modal" style="display:none;" onclick="closeStageModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h3 style="color:#f59e0b; margin-bottom:10px;" id="sm-title">Stage-Vortrag / Programm bearbeiten</h3>
+      
+      <div style="margin-bottom:10px;">
+        <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Titel / Vortragsbeschreibung:</label>
+        <input type="text" id="sm-text" placeholder="z. B. Keynote & Panel" style="width:100%;">
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <div style="flex:1;">
+          <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Startzeit:</label>
+          <input type="time" id="sm-start" style="width:100%; font-weight:bold;">
+        </div>
+        <div style="flex:1;">
+          <label style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Endzeit:</label>
+          <input type="time" id="sm-end" style="width:100%; font-weight:bold;">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:6px; margin-top:16px;">
+        <button style="flex:1; background:#f59e0b; color:#000; font-weight:bold;" onclick="saveStageModal()">Speichern</button>
+        <button id="sm-del-btn" style="background:transparent; border:1px solid var(--danger); color:var(--danger);" onclick="deleteStageModal()">Löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="covers-modal" style="display:none;" onclick="closeCoversModal()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="width:540px;">
+      <h3 style="color:var(--primary); margin-bottom:6px;">⏱️ Pausenspringer verwalten & Schichten</h3>
+      <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Pausen nach Schichtende werden auf dem Zeitstrahl als Warnung schraffiert.</p>
+      
+      <div id="covers-list-box"></div>
+      
+      <button style="background:#243354; color:#fff; width:100%; margin-top:10px;" onclick="addCoverMember()">+ Neuen Springer hinzufügen</button>
+
+      <div style="margin-top:16px; text-align:right;">
+        <button style="background:var(--primary); color:#000;" onclick="saveCoversModal()">Speichern & Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="team-modal" style="display:none;" onclick="closeTeamModal()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="width:580px;">
+      <h3 style="color:var(--primary); margin-bottom:6px;">👥 Team & Posten bearbeiten</h3>
+      <div id="team-edit-box"></div>
+      <button style="background:#243354; color:#fff; width:100%; margin-top:8px;" onclick="addTeamMember()">+ Neue Person hinzufügen</button>
+      <div style="margin-top:14px; text-align:right;">
+        <button style="background:var(--primary); color:#000;" onclick="saveTeamModal()">Speichern & Schließen</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+// Stage-Definitionen mit Programmslots
+var STAGES_CONFIG = [
+  { 
+    id: "stage_plaza", 
+    name: "Plaza Stage (hub27)", 
+    programs: [
+      { id: 1, text: "Opening & Keynote", start: "10:00", end: "11:30" },
+      { id: 2, text: "Smart City Panel", start: "12:15", end: "13:30" }
+    ] 
+  },
+  { 
+    id: "stage_red", 
+    name: "Red Stage (hub27)", 
+    programs: [
+      { id: 3, text: "Government Tech Talk", start: "10:30", end: "12:00" },
+      { id: 4, text: "Digitale Verwaltung", start: "12:45", end: "14:00" }
+    ] 
+  },
+  { 
+    id: "stage_green", 
+    name: "Green Stage (Halle 25)", 
+    programs: [
+      { id: 5, text: "Sustainability & AI", start: "10:30", end: "12:00" },
+      { id: 6, text: "Future Mobility Session", start: "12:45", end: "14:15" }
+    ] 
+  },
+  { 
+    id: "stage_yellow", 
+    name: "Yellow Stage (Halle 26)", 
+    programs: [
+      { id: 7, text: "Startup Pitch Batch 1", start: "10:45", end: "12:15" },
+      { id: 8, text: "Innovation Showcase", start: "13:00", end: "14:30" }
+    ] 
+  },
+  { 
+    id: "stage_purple", 
+    name: "Purple Stage (Halle 26)", 
+    programs: [
+      { id: 9, text: "Cybersecurity Workshop", start: "11:00", end: "12:30" },
+      { id: 10, text: "Data Sovereignty", start: "13:15", end: "14:30" }
+    ] 
+  }
+];
+
+var appData = {
+  covers: [
+    { id: 201, name: "Daniel Yakoub", start: "10:30", end: "14:30", color: "#f59e0b" },
+    { id: 202, name: "Aurelia Mayer", start: "10:30", end: "14:30", color: "#0284c7" },
+    { id: 203, name: "Lukas Becker", start: "10:30", end: "14:30", color: "#9333ea" }
+  ],
+  stages: STAGES_CONFIG,
+  people: [
+    // --- INFOCOUNTER ---
+    { id: 1, name: "Ridda Anmol Mirza", desc: "C30 hub27 (07:00-18:00)", group: "Infocounter", sStart: "07:00", sEnd: "18:00", p: null, partnerId: 15 },
+    { id: 15, name: "Felicitas Schubert", desc: "C30 hub27 (08:00-13:30)", group: "Infocounter", sStart: "08:00", sEnd: "13:30", p: null, partnerId: 1 },
+    { id: 2, name: "Jessica Irungu", desc: "C29 Halle 25 (07:30-18:00)", group: "Infocounter", sStart: "07:30", sEnd: "18:00", p: null },
+    { id: 3, name: "Martina Errickson", desc: "C31 hub27 (07:30-18:00)", group: "Infocounter", sStart: "07:30", sEnd: "18:00", p: null },
+    { id: 4, name: "Anouk Hrestak", desc: "C32 Halle 26c (07:30-19:00)", group: "Infocounter", sStart: "07:30", sEnd: "19:00", p: null, partnerId: 5 },
+    { id: 5, name: "Meyra Keles", desc: "C32 Halle 26c (07:30-19:00)", group: "Infocounter", sStart: "07:30", sEnd: "19:00", p: null, partnerId: 4 },
+    { id: 6, name: "Vivek Majithia", desc: "C33 Halle 26b (07:30-18:00)", group: "Infocounter", sStart: "07:30", sEnd: "18:00", p: null },
+    { id: 7, name: "Mariia Romaniuk", desc: "C34 Halle 26a (07:30-18:00)", group: "Infocounter", sStart: "07:30", sEnd: "18:00", p: null },
+    { id: 8, name: "Anna Steiger", desc: "C35 Halle 26a (07:30-18:00)", group: "Infocounter", sStart: "07:30", sEnd: "18:00", p: null, partnerId: 29 },
+    { id: 29, name: "Noah Böhme", desc: "C35 Halle 26a (11:30-18:00)", group: "Infocounter", sStart: "11:30", sEnd: "18:00", p: null, partnerId: 8 },
+    { id: 30, name: "Darius-Marvin Westerhold", desc: "C35 Halle 26a (11:30-18:00)", group: "Infocounter", sStart: "11:30", sEnd: "18:00", p: null, partnerId: 8 },
+    { id: 9, name: "Anna Ribbeck", desc: "C36 Halle 24 (07:30-17:30)", group: "Infocounter", sStart: "07:30", sEnd: "17:30", p: null },
+
+    // --- STAGES (PAARWEISE ZUGEORDNET) ---
+    // Plaza Stage
+    { id: 18, name: "Elisha Dalmis", desc: "Plaza Stage Host (09:00-17:15)", group: "stage_plaza", sStart: "09:00", sEnd: "17:15", p: null, partnerId: 17 },
+    { id: 17, name: "Oluwafemi Joel Brown", desc: "Plaza Stage Umbau (08:30-17:30)", group: "stage_plaza", sStart: "08:30", sEnd: "17:30", p: null, partnerId: 18 },
+    // Red Stage
+    { id: 20, name: "Melina Jantke", desc: "Red Stage Host (10:00-18:15)", group: "stage_red", sStart: "10:00", sEnd: "18:15", p: null, partnerId: 22 },
+    { id: 22, name: "Finn Heyse", desc: "Red Stage Umbau (10:00-18:15)", group: "stage_red", sStart: "10:00", sEnd: "18:15", p: null, partnerId: 20 },
+    // Green Stage
+    { id: 21, name: "Luna Feucht", desc: "Green Stage Host (10:00-18:15)", group: "stage_green", sStart: "10:00", sEnd: "18:15", p: null, partnerId: 23 },
+    { id: 23, name: "Arthur Garner", desc: "Green Stage Umbau (10:00-18:30)", group: "stage_green", sStart: "10:00", sEnd: "18:30", p: null, partnerId: 21 },
+    // Yellow Stage
+    { id: 25, name: "Erika Bellm", desc: "Yellow Stage Host (10:15-18:15)", group: "stage_yellow", sStart: "10:15", sEnd: "18:15", p: null, partnerId: 19 },
+    { id: 19, name: "Cairo Würdig", desc: "Yellow Stage Umbau (09:45-18:30)", group: "stage_yellow", sStart: "09:45", sEnd: "18:30", p: null, partnerId: 25 },
+    // Purple Stage
+    { id: 24, name: "Johann Stapel", desc: "Purple Stage Host (10:15-18:15)", group: "stage_purple", sStart: "10:15", sEnd: "18:15", p: null, partnerId: 32 },
+    { id: 32, name: "Sonja Kern", desc: "Purple Stage Umbau (10:15-18:30)", group: "stage_purple", sStart: "10:15", sEnd: "18:30", p: null, partnerId: 24 },
+
+    // --- EXTRAS & WEGELEITUNG ---
+    { id: 13, name: "Anouk Eckart", desc: "Wegeleitung VIP hub27 (07:30-18:00)", group: "Extras & Wegeleitung", sStart: "07:30", sEnd: "18:00", p: null },
+    { id: 14, name: "Heiko Baschek", desc: "Wegeleitung VIP hub27 (07:30-12:00)", group: "Extras & Wegeleitung", sStart: "07:30", sEnd: "12:00", p: null },
+    { id: 16, name: "Alina Batalov", desc: "Meetingräume Kassel 1+2 (08:00-18:00)", group: "Extras & Wegeleitung", sStart: "08:00", sEnd: "18:00", p: null },
+    { id: 31, name: "Elena Reshetnikova", desc: "Messeleitung ab 17:30 H24 (16:00-20:00)", group: "Extras & Wegeleitung", sStart: "16:00", sEnd: "20:00", p: null }
+  ]
+};
+
+function persist() {
+  try { localStorage.setItem("sccon26_final_dashboard_storage", JSON.stringify(appData)); } catch(e){}
+}
+
+var loaded = null;
+try { loaded = JSON.parse(localStorage.getItem("sccon26_final_dashboard_storage")); } catch(e){}
+if (loaded && loaded.covers && loaded.covers.length > 0) {
+  appData.covers = loaded.covers;
+  if (loaded.stages) appData.stages = loaded.stages;
+  if (loaded.people) appData.people = loaded.people;
+}
+
+function toM(str) {
+  if (!str) return 0;
+  var p = str.split(":");
+  return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+}
+
+function toTimeStr(mins) {
+  var h = String(Math.floor(mins / 60)).padStart(2, '0');
+  var m = String(mins % 60).padStart(2, '0');
+  return h + ":" + m;
+}
+
+function getCurrentMinutes() {
+  var d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+function getRequiredBreakDur(sStart, sEnd) {
+  var diff = toM(sEnd) - toM(sStart);
+  if (diff >= 540) return 60; // ab 9 Std
+  if (diff >= 360) return 30; // ab 6 Std
+  return 0; // unter 6 Std
+}
+
+function getDynamicRange() {
+  var starts = [570]; // min. 09:30
+  var ends = [930];   // min. 15:30
+
+  var nowM = getCurrentMinutes();
+  if (nowM >= 420 && nowM <= 1260) {
+    starts.push(nowM);
+    ends.push(nowM + 30);
+  }
+
+  appData.people.forEach(function(p) {
+    if (p.p) {
+      var s = toM(p.p.start);
+      starts.push(s);
+      ends.push(s + (p.p.dur || 60));
+    }
+  });
+
+  appData.covers.forEach(function(c) {
+    if (c.start) starts.push(toM(c.start));
+    if (c.end) ends.push(toM(c.end));
+  });
+
+  appData.stages.forEach(function(st) {
+    st.programs.forEach(function(pr) {
+      if (pr.start) starts.push(toM(pr.start));
+      if (pr.end) ends.push(toM(pr.end));
+    });
+  });
+
+  var minM = Math.min.apply(null, starts);
+  var maxM = Math.max.apply(null, ends);
+
+  var rStart = Math.max(420, Math.floor(minM / 30) * 30);
+  var rEnd = Math.min(1260, Math.ceil(maxM / 30) * 30 + 30);
+
+  return { start: rStart, end: rEnd, total: rEnd - rStart };
+}
+
+function renderTicks(range) {
+  var el = document.getElementById("timeline-ticks");
+  el.innerHTML = "";
+  for (var m = range.start; m <= range.end; m += 30) {
+    var pct = ((m - range.start) / range.total) * 100;
+    var d = document.createElement("div");
+    d.className = "tick-label";
+    d.style.left = pct + "%";
+    d.innerText = toTimeStr(m);
+    el.appendChild(d);
+  }
+}
+
+function autoDistribute() {
+  appData.people.forEach(function(p){ p.p = null; });
+
+  var c1 = appData.covers[0] || { name: "Daniel Yakoub", start: "10:30" };
+  var c2 = appData.covers[1] || { name: "Aurelia Mayer", start: "10:30" };
+  var c3 = appData.covers[2] || { name: "Lukas Becker", start: "10:30" };
+
+  var t1 = toM(c1.start || "10:30") + 15; // 10:45
+  var t2 = toM(c2.start || "10:30") + 15; // 10:45
+  var t3 = toM(c3.start || "10:30") + 15; // 10:45
+
+  function assign(id, coverName, startTime, dur) {
+    var person = appData.people.find(function(x){ return x.id === id; });
+    if (person) {
+      person.p = {
+        start: toTimeStr(startTime),
+        dur: dur || 60,
+        cover: coverName
+      };
+    }
+  }
+
+  // 1. SPRINGER-ZUTEILUNG NACH GEOGRAFIE & LAUFWEGEN
+  // Daniel: hub27 / Brücke (C29 Halle 25 & C31 hub27)
+  assign(2, c1.name, t1, 60);      // Jessica Irungu (C29) -> 10:45 - 11:45
+  assign(3, c1.name, t1 + 75, 60); // Martina Errickson (C31) -> 12:00 - 13:00
+
+  // Aurelia: Halle 26 (C33 & C34)
+  assign(6, c2.name, t2, 60);      // Vivek Majithia (C33) -> 10:45 - 11:45
+  assign(7, c2.name, t2 + 75, 60); // Mariia Romaniuk (C34) -> 12:00 - 13:00
+
+  // Lukas: Halle 24 (C36) & Wegeleitung Anouk Eckart
+  assign(9, c3.name, t3, 60);      // Anna Ribbeck (C36) -> 10:45 - 11:45
+  assign(13, c3.name, t3 + 75, 60);// Anouk Eckart (Wegeleitung) -> 12:00 - 13:00
+
+  // 2. DOPPELBESETZTE COUNTER (INTERNER PARTNERTAUSCH)
+  // C30 hub27 (Ridda & Felicitas)
+  assign(1, "Felicitas Schubert (Partner)", toM("10:45"), 45); // Ridda
+  assign(15, "Ridda Anmol Mirza (Partner)", toM("11:45"), 45); // Felicitas
+
+  // C32 Halle 26c (Anouk H. & Meyra K.)
+  assign(4, "Meyra Keles (Partner)", toM("11:30"), 60);       // Anouk H.
+  assign(5, "Anouk Hrestak (Partner)", toM("12:45"), 60);     // Meyra K.
+
+  // C35 Halle 26a (Anna Steiger, ab 11:30 verstärkt durch Noah Böhme & Darius Westerhold)
+  assign(8, "Noah Böhme (Partner)", toM("12:00"), 60);        // Anna Steiger
+  assign(29, "Anna Steiger (Partner)", toM("13:15"), 60);     // Noah Böhme
+  assign(30, "Anna Steiger (Partner)", toM("14:30"), 60);     // Darius Westerhold
+
+  // 3. STAGES: VERSETZTER INTERNER PARTNERTAUSCH ZWISCHEN HOST & UMBAUHELFER
+  // Plaza Stage (Elisha & Joel)
+  assign(18, "Joel Brown (Umbau-Partner)", toM("11:30"), 45); // Elisha
+  assign(17, "Elisha Dalmis (Host-Partner)", toM("13:30"), 60); // Joel
+
+  // Red Stage (Melina & Finn)
+  assign(20, "Finn Heyse (Umbau-Partner)", toM("12:00"), 45); // Melina
+  assign(22, "Melina Jantke (Host-Partner)", toM("14:00"), 60); // Finn
+
+  // Green Stage (Luna & Arthur)
+  assign(21, "Arthur Garner (Umbau-Partner)", toM("12:00"), 45); // Luna
+  assign(23, "Luna Feucht (Host-Partner)", toM("14:15"), 60); // Arthur
+
+  // Yellow Stage (Erika & Cairo)
+  assign(25, "Cairo Würdig (Umbau-Partner)", toM("12:15"), 45); // Erika
+  assign(19, "Erika Bellm (Host-Partner)", toM("14:30"), 60); // Cairo
+
+  // Purple Stage (Johann & Sonja)
+  assign(24, "Sonja Kern (Umbau-Partner)", toM("12:30"), 45); // Johann
+  assign(32, "Johann Stapel (Host-Partner)", toM("14:30"), 60); // Sonja
+
+  persist();
+  render();
+}
+
+function clearBreaks() {
+  if (confirm("Wirklich alle Pausen leeren?")) {
+    appData.people.forEach(function(p){ p.p = null; });
+    persist();
+    render();
+  }
+}
+
+function captureAndDownload() {
+  var area = document.getElementById("capture-area");
+  var btn = document.getElementById("shot-btn");
+  btn.innerText = "⏳ Bild wird erstellt...";
+
+  html2canvas(area, { backgroundColor: "#0b1120", scale: 2 }).then(function(canvas) {
+    var link = document.createElement("a");
+    link.download = "SCCON26_Pausenplan_Export.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+
+    document.body.classList.toggle("screenshot-mode");
+    btn.innerText = document.body.classList.contains("screenshot-mode") ? "✏️ Bearbeitungs-Modus" : "📸 Screenshot & Download";
+  }).catch(function(err) {
+    alert("Fehler beim Erstellen des Screenshots.");
+    btn.innerText = "📸 Screenshot & Download";
+  });
+}
+
+function render() {
+  var range = getDynamicRange();
+  renderTicks(range);
+
+  var allBreaks = [];
+  appData.people.forEach(function(p) {
+    if (p.p) {
+      var s = toM(p.p.start);
+      allBreaks.push({
+        pId: p.id,
+        pName: p.name,
+        desc: p.desc,
+        group: p.group,
+        start: s,
+        dur: p.p.dur,
+        end: s + p.p.dur,
+        cover: p.p.cover || "Unbekannt"
+      });
+    }
+  });
+
+  var conflictPIds = new Set();
+  var wegzeitDangerPIds = new Set();
+  var wegzeitWarnPIds = new Set();
+  var overtimeInfo = {};
+
+  allBreaks.sort(function(a, b){ return a.start - b.start; });
+
+  // 1. Feierabend & Dienstbeginn
+  allBreaks.forEach(function(b) {
+    var covObj = appData.covers.find(function(c){ return c.name === b.cover; });
+    if (covObj && covObj.end && covObj.start) {
+      var sEnd = toM(covObj.end);
+      var sStart = toM(covObj.start);
+      if (b.end > sEnd) {
+        overtimeInfo[b.pId] = "FEIERABEND (" + covObj.end + ")";
+      } else if (b.start < sStart) {
+        overtimeInfo[b.pId] = "VOR DIENST (" + covObj.start + ")";
+      }
+    }
+  });
+
+  // 2. Konflikt- und Wegzeit-Prüfung
+  for (var i = 0; i < allBreaks.length; i++) {
+    for (var j = i + 1; j < allBreaks.length; j++) {
+      var b1 = allBreaks[i];
+      var b2 = allBreaks[j];
+      
+      // Nur echte Springer auf Wegzeit und Doppelbelegung prüfen (Partner/Teamintern vertritt unabhängig)
+      var isCoverSpringer = appData.covers.some(function(c){ return c.name === b1.cover; });
+      if (isCoverSpringer && b1.cover === b2.cover) {
+        if (b1.start < b2.end && b2.start < b1.end) {
+          conflictPIds.add(b1.pId);
+          conflictPIds.add(b2.pId);
+        } else {
+          var gap = b2.start - b1.end;
+          if (gap >= 0 && gap < 10) {
+            wegzeitDangerPIds.add(b1.pId);
+            wegzeitDangerPIds.add(b2.pId);
+          } else if (gap >= 10 && gap < 15) {
+            wegzeitWarnPIds.add(b1.pId);
+            wegzeitWarnPIds.add(b2.pId);
+          }
+        }
+      }
+    }
+  }
+
+  // Springer Auslastungs-Legende
+  var covMinutes = {};
+  allBreaks.forEach(function(b){ covMinutes[b.cover] = (covMinutes[b.cover] || 0) + b.dur; });
+
+  var leg = document.getElementById("legend-box");
+  leg.innerHTML = "<span style='color:var(--muted); font-weight:bold;'>Springer Auslastung:</span>";
+  appData.covers.forEach(function(c) {
+    var m = covMinutes[c.name] || 0;
+    leg.innerHTML += "<span class='badge-cov' style='background:" + c.color + "'>" + c.name.split(" ")[0] + " (" + (c.start||"10:30") + "-" + (c.end||"14:30") + " | " + m + "m)</span>";
+  });
+
+  var gBody = document.getElementById("gantt-body");
+  gBody.innerHTML = "";
+
+  var nowM = getCurrentMinutes();
+  var isNowVisible = (nowM >= range.start && nowM <= range.end);
+  var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
+
+  // RENDERN DER LOGISCHEN BEREICHE
+  var sections = [
+    { title: "🏢 Infocounter", filter: function(p){ return p.group === "Infocounter"; } },
+    { title: "🎙️ Stages & Bühnen-Teams", isStageContainer: true },
+    { title: "🧭 Extras & Wegeleitung", filter: function(p){ return p.group === "Extras & Wegeleitung"; } }
+  ];
+
+  sections.forEach(function(sec) {
+    if (sec.isStageContainer) {
+      // HAUPT-HEADER STAGES
+      var head = document.createElement("div");
+      head.className = "group-header";
+      head.innerHTML = "<span>" + sec.title + "</span><span style='font-size:0.7rem; color:var(--muted); font-weight:normal;'>Klicke auf die Stage-Leiste, um Vortragszeiten hinzuzufügen</span>";
+      gBody.appendChild(head);
+
+      // FÜR JEDE STAGE EIGENER SUBHEADER MIT VORTRAGSTRACK
+      appData.stages.forEach(function(stage) {
+        var subHeader = document.createElement("div");
+        subHeader.className = "stage-sub-header";
+        
+        var titleSpan = document.createElement("span");
+        titleSpan.innerHTML = "🎤 <b>" + stage.name + "</b>";
+        subHeader.appendChild(titleSpan);
+
+        // Vortrags-Leiste
+        var progTrack = document.createElement("div");
+        progTrack.className = "stage-prog-bar-container";
+        progTrack.title = "Klicken, um neuen Programmslot hinzuzufügen";
+        progTrack.onclick = function(e) {
+          if (e.target === progTrack) openStageModal(stage.id, null);
+        };
+
+        stage.programs.forEach(function(slot) {
+          var sM = toM(slot.start);
+          var eM = toM(slot.end);
+          var sPct = Math.max(0, ((sM - range.start) / range.total) * 100);
+          var wPct = Math.max(2, (((eM - sM) / range.total) * 100));
+
+          var bSlot = document.createElement("div");
+          bSlot.className = "stage-slot-badge";
+          bSlot.style.left = sPct + "%";
+          bSlot.style.width = wPct + "%";
+          bSlot.innerText = slot.start + "-" + slot.end + ": " + slot.text;
+          bSlot.onclick = function(ev) {
+            ev.stopPropagation();
+            openStageModal(stage.id, slot.id);
+          };
+          progTrack.appendChild(bSlot);
+        });
+
+        subHeader.appendChild(progTrack);
+
+        var addBtn = document.createElement("button");
+        addBtn.style.padding = "2px 8px";
+        addBtn.style.marginLeft = "8px";
+        addBtn.style.fontSize = "0.7rem";
+        addBtn.style.background = "#243354";
+        addBtn.style.color = "#f59e0b";
+        addBtn.innerText = "+ Vortrag";
+        addBtn.onclick = function(){ openStageModal(stage.id, null); };
+        subHeader.appendChild(addBtn);
+
+        gBody.appendChild(subHeader);
+
+        // PERSONEN DER JEWEILIGEN STAGE
+        var stagePeople = appData.people.filter(function(p){ return p.group === stage.id; });
+        stagePeople.forEach(function(p){ renderPersonRow(p, gBody, allBreaks, range, isNowVisible, nowPct, conflictPIds, overtimeInfo, wegzeitDangerPIds, wegzeitWarnPIds); });
+      });
+
+    } else {
+      var peopleInSec = appData.people.filter(sec.filter);
+      if (peopleInSec.length === 0) return;
+
+      var secHead = document.createElement("div");
+      secHead.className = "group-header";
+      secHead.innerText = sec.title + " (" + peopleInSec.length + " Personen)";
+      gBody.appendChild(secHead);
+
+      peopleInSec.forEach(function(p){ renderPersonRow(p, gBody, allBreaks, range, isNowVisible, nowPct, conflictPIds, overtimeInfo, wegzeitDangerPIds, wegzeitWarnPIds); });
+    }
+  });
+
+  // Jetzt-Badge auf Timeline
+  var oldBadge = document.getElementById("now-badge-el");
+  if (oldBadge) oldBadge.remove();
+  if (isNowVisible && nowPct !== null) {
+    var headEl = document.getElementById("timeline-ticks");
+    var badge = document.createElement("div");
+    badge.id = "now-badge-el";
+    badge.className = "now-indicator-badge";
+    badge.style.left = nowPct + "%";
+    badge.innerText = "JETZT " + toTimeStr(nowM);
+    headEl.appendChild(badge);
+  }
+
+  renderTable();
+}
+
+function renderPersonRow(p, container, allBreaks, range, isNowVisible, nowPct, conflictPIds, overtimeInfo, wegzeitDangerPIds, wegzeitWarnPIds) {
+  var row = document.createElement("div");
+  row.className = "gantt-row";
+
+  var meta = document.createElement("div");
+  meta.className = "row-meta";
+  meta.innerHTML = "<div><div class='row-name'>" + p.name + "</div><div class='row-sub'>" + p.desc + "</div></div>";
+  row.appendChild(meta);
+
+  var track = document.createElement("div");
+  track.className = "row-track";
+
+  if (isNowVisible && nowPct !== null) {
+    var nowLine = document.createElement("div");
+    nowLine.className = "now-indicator-line";
+    nowLine.style.left = nowPct + "%";
+    track.appendChild(nowLine);
+  }
+
+  var b = allBreaks.find(function(x){ return x.pId === p.id; });
+  if (b) {
+    var isConflict = conflictPIds.has(p.id);
+    var isOvertime = overtimeInfo[p.id];
+    var isWegzeitDanger = wegzeitDangerPIds.has(p.id) && !isConflict;
+    var isWegzeitWarn = wegzeitWarnPIds.has(p.id) && !isConflict && !isWegzeitDanger;
+
+    var covObj = appData.covers.find(function(c){ return c.name === b.cover; });
+    var color = covObj ? covObj.color : "#475569";
+
+    var bar = document.createElement("div");
+    var warnClasses = "";
+    var labelPrefix = "";
+
+    if (isConflict) {
+      warnClasses = "bar-conflict";
+      labelPrefix = "⚠️ DOPPELBELEGUNG: ";
+    } else if (isOvertime) {
+      warnClasses = "bar-overtime";
+      labelPrefix = "⚠️ " + isOvertime + ": ";
+    } else if (isWegzeitDanger) {
+      warnClasses = "bar-wegzeit-danger";
+      labelPrefix = "⚠️ Wegzeit <10m: ";
+    } else if (isWegzeitWarn) {
+      warnClasses = "bar-wegzeit-warn";
+      labelPrefix = "";
+    }
+
+    bar.className = "bar " + warnClasses;
+    bar.style.left = Math.max(0, ((b.start - range.start) / range.total) * 100) + "%";
+    bar.style.width = ((b.dur / range.total) * 100) + "%";
+    bar.style.background = color;
+    bar.innerText = labelPrefix + b.cover.split(" ")[0] + " • " + toTimeStr(b.start);
+
+    initDesktopDrag(bar, p.id, track, range);
+
+    bar.onclick = function(e) {
+      if (!bar.dataset.dragged) openModal(p.id);
+    };
+
+    track.appendChild(bar);
+  }
+
+  row.appendChild(track);
+  container.appendChild(row);
+}
+
+function initDesktopDrag(barEl, personId, trackEl, range) {
+  var startX = 0, origLeftPct = 0, isDragging = false;
+
+  barEl.onmousedown = function(e) {
+    if (e.button !== 0) return;
+    isDragging = true;
+    barEl.dataset.dragged = "";
+    startX = e.clientX;
+    origLeftPct = parseFloat(barEl.style.left) || 0;
+
+    document.onmousemove = function(e) {
+      if (!isDragging) return;
+      barEl.dataset.dragged = "true";
+      var deltaPx = e.clientX - startX;
+      var trackWidth = trackEl.clientWidth;
+      var deltaPct = (deltaPx / trackWidth) * 100;
+      var newPct = Math.max(0, Math.min(100 - parseFloat(barEl.style.width), origLeftPct + deltaPct));
+      barEl.style.left = newPct + "%";
+    };
+
+    document.onmouseup = function() {
+      if (!isDragging) return;
+      isDragging = false;
+      document.onmousemove = null;
+      document.onmouseup = null;
+
+      if (barEl.dataset.dragged === "true") {
+        var finalPct = parseFloat(barEl.style.left);
+        var currentMins = range.start + (finalPct / 100) * range.total;
+        var snappedMins = Math.round(currentMins / 5) * 5; // 5-Minuten Raster
+        
+        var person = appData.people.find(function(x){ return x.id === personId; });
+        if (person && person.p) {
+          person.p.start = toTimeStr(snappedMins);
+          persist();
+          render();
+        }
+      }
+    };
+  };
+}
+
+function renderTable() {
+  var tb = document.getElementById("table-body");
+  tb.innerHTML = "";
+
+  appData.people.forEach(function(p) {
+    var tr = document.createElement("tr");
+
+    var groupLabel = p.group;
+    if (p.group.startsWith("stage_")) {
+      var stObj = appData.stages.find(function(s){ return s.id === p.group; });
+      groupLabel = stObj ? stObj.name.split(" ")[0] + " " + stObj.name.split(" ")[1] : "Stage";
+    }
+
+    var reqDur = getRequiredBreakDur(p.sStart, p.sEnd);
+    var pTime = "";
+    var pCover = "";
+
+    if (p.p) {
+      pTime = '<b>' + p.p.start + '</b> (' + p.p.dur + 'm)';
+      pCover = '<b>' + p.p.cover + '</b>';
+    } else {
+      pTime = '<span class="status-fehlt">fehlt (' + reqDur + 'm)</span>';
+      pCover = '<span class="status-fehlt">fehlt</span>';
+    }
+
+    tr.innerHTML = 
+      '<td><b>' + p.name + '</b></td>' +
+      '<td>' + p.desc + '</td>' +
+      '<td><span style="color:var(--primary); font-size:0.75rem;">' + groupLabel + '</span></td>' +
+      '<td>' + pTime + '</td>' +
+      '<td>' + pCover + '</td>' +
+      '<td style="text-align: center;"><button class="btn-edit" onclick="openModal(' + p.id + ')">Bearbeiten</button></td>';
+
+    tb.appendChild(tr);
+  });
+}
+
+var activeModalPId = null;
+
+function openModal(pId) {
+  activeModalPId = pId;
+  var p = appData.people.find(function(x){ return x.id === pId; });
+  if (!p) return;
+
+  var reqDur = getRequiredBreakDur(p.sStart, p.sEnd) || 60;
+  document.getElementById("m-title").innerText = p.name + " (" + p.desc + ")";
+  document.getElementById("m-start").value = p.p ? p.p.start : "11:30";
+  document.getElementById("m-dur").value = p.p ? p.p.dur : reqDur;
+
+  var sel = document.getElementById("m-cover");
+  var partnerPerson = p.partnerId ? appData.people.find(function(x){ return x.id === p.partnerId; }) : null;
+  var partnerOpt = partnerPerson ? '<option value="' + partnerPerson.name + ' (Partner)">Partner: ' + partnerPerson.name + '</option>' : '';
+
+  sel.innerHTML = '<option value="">-- Pausenspringer wählen --</option>' + partnerOpt +
+    appData.covers.map(function(c){
+      var s = (p.p && p.p.cover === c.name) ? "selected" : "";
+      return '<option value="' + c.name + '" ' + s + '>' + c.name + ' (' + c.start + '-' + c.end + ')</option>';
+    }).join('');
+
+  if (p.p && p.p.cover && partnerPerson && p.p.cover.includes(partnerPerson.name)) {
+    sel.value = partnerPerson.name + " (Partner)";
+  }
+
+  document.getElementById("m-custom").value = (p.p && !appData.covers.some(function(c){ return c.name === p.p.cover; }) && (!partnerPerson || !p.p.cover.includes(partnerPerson.name))) ? p.p.cover : "";
+  document.getElementById("edit-modal").style.display = "flex";
+}
+
+function closeModal() { document.getElementById("edit-modal").style.display = "none"; }
+
+function saveModal() {
+  var p = appData.people.find(function(x){ return x.id === activeModalPId; });
+  if (!p) return;
+
+  var custom = document.getElementById("m-custom").value.trim();
+  var chosen = document.getElementById("m-cover").value;
+  var finalCover = custom || chosen || "Freier Springer";
+  var chosenStart = document.getElementById("m-start").value || "11:30";
+  var chosenDur = parseInt(document.getElementById("m-dur").value, 10) || 60;
+
+  p.p = {
+    start: chosenStart,
+    dur: chosenDur,
+    cover: finalCover
+  };
+
+  persist();
+  closeModal();
+  render();
+}
+
+function deleteModal() {
+  var p = appData.people.find(function(x){ return x.id === activeModalPId; });
+  if (p) { p.p = null; persist(); }
+  closeModal();
+  render();
+}
+
+var activeStageId = null;
+var activeProgramSlotId = null;
+
+function openStageModal(stageId, slotId) {
+  activeStageId = stageId;
+  activeProgramSlotId = slotId;
+  var st = appData.stages.find(function(s){ return s.id === stageId; });
+  if (!st) return;
+
+  document.getElementById("sm-title").innerText = st.name + " – Vortrag / Programm";
+
+  if (slotId) {
+    var sl = st.programs.find(function(p){ return p.id === slotId; });
+    document.getElementById("sm-text").value = sl ? sl.text : "";
+    document.getElementById("sm-start").value = sl ? sl.start : "11:00";
+    document.getElementById("sm-end").value = sl ? sl.end : "12:15";
+    document.getElementById("sm-del-btn").style.display = "block";
+  } else {
+    document.getElementById("sm-text").value = "Keynote / Vortrag";
+    document.getElementById("sm-start").value = "11:00";
+    document.getElementById("sm-end").value = "12:15";
+    document.getElementById("sm-del-btn").style.display = "none";
+  }
+
+  document.getElementById("stage-modal").style.display = "flex";
+}
+
+function closeStageModal() { document.getElementById("stage-modal").style.display = "none"; }
+
+function saveStageModal() {
+  var st = appData.stages.find(function(s){ return s.id === activeStageId; });
+  if (!st) return;
+
+  var text = document.getElementById("sm-text").value.trim() || "Vortrag";
+  var start = document.getElementById("sm-start").value || "11:00";
+  var end = document.getElementById("sm-end").value || "12:15";
+
+  if (activeProgramSlotId) {
+    var sl = st.programs.find(function(p){ return p.id === activeProgramSlotId; });
+    if (sl) {
+      sl.text = text;
+      sl.start = start;
+      sl.end = end;
+    }
+  } else {
+    st.programs.push({
+      id: Date.now(),
+      text: text,
+      start: start,
+      end: end
+    });
+  }
+
+  persist();
+  closeStageModal();
+  render();
+}
+
+function deleteStageModal() {
+  var st = appData.stages.find(function(s){ return s.id === activeStageId; });
+  if (st && activeProgramSlotId) {
+    st.programs = st.programs.filter(function(p){ return p.id !== activeProgramSlotId; });
+    persist();
+  }
+  closeStageModal();
+  render();
+}
+
+function openCoversModal() {
+  var box = document.getElementById("covers-list-box");
+  box.innerHTML = "";
+
+  appData.covers.forEach(function(c, i) {
+    var row = document.createElement("div");
+    row.className = "modal-row";
+    row.innerHTML = 
+      '<input type="color" value="' + (c.color||"#0284c7") + '" id="cov-col-' + i + '" style="width:36px; padding:0; height:30px; cursor:pointer;" title="Farbe">' +
+      '<input type="text" value="' + c.name + '" id="cov-name-' + i + '" style="flex:2;" placeholder="Name">' +
+      '<input type="time" value="' + (c.start||"10:30") + '" id="cov-start-' + i + '" style="flex:1;" title="Dienstbeginn">' +
+      '<input type="time" value="' + (c.end||"14:30") + '" id="cov-end-' + i + '" style="flex:1;" title="Feierabend">' +
+      '<button type="button" style="color:var(--danger); background:transparent; padding:4px;" onclick="removeCoverMember(' + i + ')">✕</button>';
+    box.appendChild(row);
+  });
+
+  document.getElementById("covers-modal").style.display = "flex";
+}
+
+function closeCoversModal() { document.getElementById("covers-modal").style.display = "none"; }
+
+function addCoverMember() {
+  var defaultColors = ["#0284c7", "#9333ea", "#ea580c", "#10b981", "#ec4899", "#f59e0b", "#64748b"];
+  var nextCol = defaultColors[appData.covers.length % defaultColors.length];
+  appData.covers.push({
+    id: Date.now(),
+    name: "Neuer Springer",
+    start: "10:30",
+    end: "14:30",
+    color: nextCol
+  });
+  openCoversModal();
+}
+
+function removeCoverMember(idx) {
+  if (confirm("Springer '" + appData.covers[idx].name + "' wirklich entfernen?")) {
+    appData.covers.splice(idx, 1);
+    openCoversModal();
+  }
+}
+
+function saveCoversModal() {
+  appData.covers.forEach(function(c, i) {
+    var n = document.getElementById("cov-name-" + i).value.trim();
+    var s = document.getElementById("cov-start-" + i).value;
+    var e = document.getElementById("cov-end-" + i).value;
+    var col = document.getElementById("cov-col-" + i).value;
+    if (n) c.name = n;
+    if (s) c.start = s;
+    if (e) c.end = e;
+    if (col) c.color = col;
+  });
+  persist();
+  closeCoversModal();
+  render();
+}
+
+function openTeamModal() {
+  var box = document.getElementById("team-edit-box");
+  box.innerHTML = "";
+
+  appData.people.forEach(function(p, i) {
+    var row = document.createElement("div");
+    row.className = "modal-row";
+    row.innerHTML = 
+      '<input type="text" value="' + p.name + '" id="tm-name-' + i + '" style="flex:2;">' +
+      '<input type="text" value="' + p.desc + '" id="tm-desc-' + i + '" style="flex:2.5;">' +
+      '<button type="button" style="color:var(--danger); background:transparent;" onclick="removeTeamMember(' + i + ')">✕</button>';
+    box.appendChild(row);
+  });
+
+  document.getElementById("team-modal").style.display = "flex";
+}
+
+function closeTeamModal() { document.getElementById("team-modal").style.display = "none"; }
+
+function addTeamMember() {
+  var name = prompt("Name der neuen Person:", "Neue Person");
+  if (!name) return;
+  var desc = prompt("Station / Position:", "Infocounter");
+  appData.people.push({
+    id: Date.now(),
+    name: name.trim(),
+    desc: desc ? desc.trim() : "Infocounter",
+    group: "Infocounter",
+    sStart: "08:00",
+    sEnd: "17:00",
+    p: null
+  });
+  openTeamModal();
+}
+
+function removeTeamMember(idx) {
+  if (confirm("Person wirklich aus der Liste löschen?")) {
+    appData.people.splice(idx, 1);
+    openTeamModal();
+  }
+}
+
+function saveTeamModal() {
+  appData.people.forEach(function(p, i) {
+    var n = document.getElementById("tm-name-" + i);
+    var d = document.getElementById("tm-desc-" + i);
+    if (n && n.value.trim()) p.name = n.value.trim();
+    if (d && d.value.trim()) p.desc = d.value.trim();
+  });
+  persist();
+  closeTeamModal();
+  render();
+}
+
+render();
+setInterval(function() {
+  render();
+}, 60000);
+</script>
+</body>
+</html>
