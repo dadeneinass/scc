@@ -74,6 +74,15 @@
 
     .row-track { flex: 1; height: 100%; position: relative; background: #0f172a; }
 
+    /* HOVER-PLUS FÜR PARTNER-ZEILEN */
+    .row-hover-btn {
+      position: absolute; right: 12px; top: 7px; height: 24px; padding: 0 8px;
+      background: #0284c7; color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 4px;
+      border: 1px solid #38bdf8; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+      display: flex; align-items: center; gap: 4px; z-index: 10; cursor: pointer;
+    }
+    .gantt-row:hover .row-hover-btn { opacity: 1; pointer-events: auto; }
+
     /* AUSGRAUEN VOR/NACH DIENST */
     .off-duty-zone {
       position: absolute; top: 0; bottom: 0;
@@ -148,7 +157,7 @@
   <div class="top-bar">
     <div>
       <h1>Smart Country Convention 2026 – Pausen-Planer</h1>
-      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Priorisierte Gruppen • Partner-Kollisionsschutz • Dezente Bühnenlinie im Header</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:2px;">Rückwärts-Taktung (Späte Pausen) • 15m Wegzeit garantiert • Hover-Plus für Partner • Tourensperren</div>
     </div>
     <div class="btn-group">
       <button class="btn-util" onclick="openCoversModal()">⏱️ Springer & Zeiten</button>
@@ -272,11 +281,6 @@
   </div>
 
 <script>
-// EXAKTE REIHENFOLGE NACH PRIORITÄT:
-// 1. Extras & Wegeleitung
-// 2. Infocounter mit Pausenspringerbedarf
-// 3. Infocounter ohne Pausenspringerbedarf (Selbstablösung)
-// 4. Stages
 var GROUPS = [
   { name: "Extras & Wegeleitung", type: "extras" },
   { name: "Infocounter (Pausenspringer-Bedarf)", type: "springer" },
@@ -375,11 +379,11 @@ var appData = {
 };
 
 function persist() {
-  try { localStorage.setItem("sccon26_clean_v5", JSON.stringify(appData)); } catch(e){}
+  try { localStorage.setItem("sccon26_clean_v6", JSON.stringify(appData)); } catch(e){}
 }
 
 var loaded = null;
-try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v5")); } catch(e){}
+try { loaded = JSON.parse(localStorage.getItem("sccon26_clean_v6")); } catch(e){}
 if (loaded && loaded.covers && loaded.covers.length > 0) appData = loaded;
 
 function toM(str) {
@@ -432,17 +436,15 @@ function renderTicks(range) {
 }
 
 // LOGISCHE AUTO-VERTEILUNG:
-// Springer decken alle 7 Posten ab (5 Infocounter + Anouk + Alina)
+// 1. Teilt NUR die 7 externen Posten ein! Partner- und Bühnenposten bleiben unberührt.
+// 2. Taktet VON HINTEN (späteste Pausen zuerst), sauber mit 15m Wegzeit-Puffer.
 function autoDistribute() {
+  // Alle Pausen leeren
   appData.people.forEach(function(p){ p.p = null; p.p2 = null; });
 
-  var cNoah = appData.covers[0] || { name: "Noah Böhme", start: "10:30" };
-  var cAurelia = appData.covers[1] || { name: "Aurelia Mayer", start: "10:30" };
-  var cLukas = appData.covers[2] || { name: "Lukas Becker", start: "10:30" };
-
-  var tNoah = toM(cNoah.start || "10:30") + 15; // 10:45
-  var tAurelia = toM(cAurelia.start || "10:30") + 15; // 10:45
-  var tLukas = toM(cLukas.start || "10:30") + 15; // 10:45
+  var cNoah = appData.covers[0] || { name: "Noah Böhme", end: "14:30" };
+  var cAurelia = appData.covers[1] || { name: "Aurelia Mayer", end: "14:30" };
+  var cLukas = appData.covers[2] || { name: "Lukas Becker", end: "14:30" };
 
   function assign(id, coverName, startTime, dur) {
     var person = appData.people.find(function(x){ return x.id === id; });
@@ -455,42 +457,28 @@ function autoDistribute() {
     }
   }
 
-  // Springer 1 (Noah Böhme): C29 & C31
-  assign(2, cNoah.name, tNoah, 60);      // Jessica Irungu (10:45)
-  assign(3, cNoah.name, tNoah + 75, 60); // Martina Errickson (12:00)
+  // --- RÜCKWÄRTS-TAKTUNG FÜR NOAH (C29 & C31) ---
+  // Slot 2 (spät): 13:15 - 14:15 Uhr
+  // Slot 1 (mittags): 12:00 - 13:00 Uhr (15m Wegzeit zwischen 13:00 und 13:15!)
+  assign(2, cNoah.name, toM("12:00"), 60); // Jessica Irungu
+  assign(3, cNoah.name, toM("13:15"), 60); // Martina Errickson
 
-  // Springer 2 (Aurelia Mayer): C33 & C34
-  assign(6, cAurelia.name, tAurelia, 60);      // Vivek Majithia (10:45)
-  assign(7, cAurelia.name, tAurelia + 75, 60); // Mariia Romaniuk (12:00)
+  // --- RÜCKWÄRTS-TAKTUNG FÜR AURELIA (C33 & C34) ---
+  // Slot 2 (spät): 13:15 - 14:15 Uhr
+  // Slot 1 (mittags): 12:00 - 13:00 Uhr
+  assign(6, cAurelia.name, toM("12:00"), 60); // Vivek Majithia
+  assign(7, cAurelia.name, toM("13:15"), 60); // Mariia Romaniuk
 
-  // Springer 3 (Lukas Becker): C36 + Anouk Eckart + Alina Batalov (3x 60m im 70m-Slot)
-  assign(9, cLukas.name, tLukas, 60);        // Anna Ribbeck (10:45 - 11:45)
-  assign(13, cLukas.name, tLukas + 70, 60);  // Anouk Eckart (11:55 - 12:55)
-  assign(16, cLukas.name, tLukas + 140, 60); // Alina Batalov (13:05 - 14:05)
-
-  // Partner-Stages: Versetzte Pausen ab 12:00 Uhr
-  var partnerPairs = [
-    [18, 17], // Plaza Stage
-    [20, 22], // Red Stage
-    [21, 23], // Green Stage
-    [25, 19], // Yellow Stage
-    [26, 24], // Purple Stage
-    [1, 15],  // C30
-    [4, 5]    // C32
-  ];
-
-  partnerPairs.forEach(function(pair) {
-    var p1 = appData.people.find(function(x){ return x.id === pair[0]; });
-    var p2 = appData.people.find(function(x){ return x.id === pair[1]; });
-    if (p1 && p2) {
-      p1.p = { start: "12:00", dur: 45, cover: p2.name.split(" ")[0] };
-      p2.p = { start: "12:50", dur: 45, cover: p1.name.split(" ")[0] };
-    }
-  });
-
-  // C35: Anna Steiger (11:15), Darius (12:15 vor Tour 1)
-  assign(8, "Darius-Marvin", toM("11:15"), 60);
-  assign(30, "Anna Steiger", toM("12:15"), 60);
+  // --- 3 SLOTS FÜR LUKAS (C36, Anouk Eckart, Alina Batalov) ---
+  // Mit jeweils sauberem 15m Wegzeitpuffer:
+  // Slot 1: 10:45 - 11:45 Uhr
+  // Wegzeit: 11:45 - 12:00 Uhr (15 Min!)
+  // Slot 2: 12:00 - 13:00 Uhr
+  // Wegzeit: 13:00 - 13:15 Uhr (15 Min!)
+  // Slot 3: 13:15 - 14:15 Uhr (Fertig vor 14:30 Uhr!)
+  assign(9, cLukas.name, toM("10:45"), 60);  // Anna Ribbeck
+  assign(13, cLukas.name, toM("12:00"), 60); // Anouk Eckart
+  assign(16, cLukas.name, toM("13:15"), 60); // Alina Batalov
 
   persist();
   render();
@@ -664,7 +652,6 @@ function render() {
   var isNowVisible = (nowM >= range.start && nowM <= range.end);
   var nowPct = isNowVisible ? (((nowM - range.start) / range.total) * 100) : null;
 
-  // GRUPPEN IN DER GEWÜNSCHTEN REIHENFOLGE RENDERN
   GROUPS.forEach(function(grp) {
     var peopleInGroup = appData.people.filter(function(p){ return p.group === grp.name; });
     if (peopleInGroup.length === 0 && grp.type !== "stage") return;
@@ -718,6 +705,13 @@ function render() {
 
       var track = document.createElement("div");
       track.className = "row-track";
+
+      // HOVER-BUTTON ZUM EINFACHEN PAUSE-EINTRAGEN BEI PARTNERN/LEEREN REIHEN
+      var hoverBtn = document.createElement("button");
+      hoverBtn.className = "row-hover-btn";
+      hoverBtn.innerHTML = "+ Pause eintragen";
+      hoverBtn.onclick = function() { openModal(p.id); };
+      track.appendChild(hoverBtn);
 
       // 1. Ausgrauen vor Arbeitsbeginn
       var shiftStartM = toM(p.sStart);
@@ -902,7 +896,7 @@ function renderTable() {
       pCover = '<b>' + covers.join("<br>") + '</b>';
     } else {
       if (p.partner) {
-        pTime = '<span class="status-selbst">Partner-Ablösung</span>';
+        pTime = '<span class="status-selbst">Partner-Ablösung (offen)</span>';
         pCover = '<span class="status-selbst">' + p.partner.split(" ")[0] + '</span>';
       } else {
         pTime = '<span class="status-fehlt">fehlt</span>';
@@ -939,8 +933,8 @@ function openModal(pId) {
   document.getElementById("m-title").innerText = p.name + " (" + p.desc + ")";
   
   // 1. Pause
-  document.getElementById("m-start").value = p.p ? p.p.start : "11:30";
-  document.getElementById("m-dur").value = p.p ? p.p.dur : 60;
+  document.getElementById("m-start").value = p.p ? p.p.start : (p.partner ? "12:00" : "12:00");
+  document.getElementById("m-dur").value = p.p ? p.p.dur : (p.partner ? 45 : 60);
 
   var covOptions = '<option value="">-- Fester Springer / Partner --</option>' + 
     appData.covers.map(function(c){
@@ -951,6 +945,8 @@ function openModal(pId) {
   var sel1 = document.getElementById("m-cover");
   sel1.innerHTML = covOptions;
   if (p.p && p.p.cover) sel1.value = p.p.cover;
+  else if (p.partner) sel1.value = p.partner;
+
   document.getElementById("m-custom").value = (p.p && !appData.covers.some(function(c){ return c.name === p.p.cover; }) && p.p.cover !== p.partner) ? p.p.cover : "";
 
   // 2. Pause
@@ -963,7 +959,7 @@ function openModal(pId) {
     document.getElementById("m-p2-start").value = p.p2.start;
     document.getElementById("m-p2-dur").value = p.p2.dur;
     sel2.value = p.p2.cover;
-    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; })) ? p.p2.cover : "";
+    document.getElementById("m-p2-custom").value = (!appData.covers.some(function(c){ return c.name === p.p2.cover; }) && p.p2.cover !== p.partner) ? p.p2.cover : "";
   } else {
     chk2.checked = false;
     document.getElementById("m-p2-start").value = "14:30";
@@ -984,7 +980,7 @@ function saveModal() {
   var custom1 = document.getElementById("m-custom").value.trim();
   var chosen1 = document.getElementById("m-cover").value;
   var finalCover1 = custom1 || chosen1 || (p.partner ? p.partner : "Freier Springer");
-  var chosenStart1 = document.getElementById("m-start").value || "11:30";
+  var chosenStart1 = document.getElementById("m-start").value || "12:00";
   var chosenDur1 = parseInt(document.getElementById("m-dur").value, 10) || 60;
 
   p.p = {
